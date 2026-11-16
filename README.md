@@ -51,7 +51,8 @@ Never load another Unicum.gg version or the development bootstrap alongside it.
 
 Version 0.9.16 was built from the installed compatible EU client and replay-tested.
 See [performance and validation notes](docs/PERFORMANCE_0.9.16.md) for results and
-remaining limitations. No GitHub Release has been published; build the installation
+remaining limitations. Before publishing a binary release, follow the
+[in-game beta validation checklist](docs/BETA_VALIDATION.md). No GitHub Release has been published; build the installation
 ZIP as described below, then use `dist/unicum.gg_0.9.16_wot_2.4.1.1.zip`.
 
 1. Close the client and back up existing Unicum settings and mod files.
