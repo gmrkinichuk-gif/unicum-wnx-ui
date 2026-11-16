@@ -27,7 +27,7 @@ backoff and native-client integration constraints.
 
 - `python2.7 -B tools/selftest.py`: fake-client regression suite with live API
   checks where reachable; inspect output for explicit skips.
-- `python2.7 -B tools/release_check.py dist/gg.unicum_0.9.15.wotmod`: compiled
+- `python2.7 -B tools/release_check.py dist/gg.unicum_0.9.16.wotmod`: compiled
   package and virtual-resource check outside the game.
 - `node tools/check_roster_grid.mjs`: mirrored AS3 layout fixtures.
 - `node tools/check_battle_ui.mjs`: actual AS3 method bodies with display fixtures.
@@ -38,7 +38,8 @@ backoff and native-client integration constraints.
   `TabView.css` and a Chromium executable; client files are deliberately excluded.
 
 Optional checks write only to ignored `build/checks/`. They are fixtures, not
-evidence of in-game rendering or performance. No client installation, private
+evidence of in-game rendering or performance. For the 0.9.16 release gate and
+manual game checks, see [BETA_VALIDATION.md](BETA_VALIDATION.md). No client installation, private
 logs or screenshots are part of the repository.
 
 Regenerate badge masks only deliberately with `npm --prefix tools/badges run
