@@ -12,9 +12,10 @@ or mod-hub ID and must not be reused for this derivative without adaptation.
    client through the inherited client-files action. A candidate is an Actions
    artifact, never a Release. Record the client manifest and SHA-256 digests.
 3. Run selftest, release_check and UI checks. Review any skipped API checks.
-4. Test the candidate in WoT: both teams, panel modes, loading, Tab, native
-   Live Tags and tooltips, Alt changes, own/dead/hidden players, missing and
-   late ratings, overhead markers and the installed modpack.
+4. Test the candidate in WoT using [BETA_VALIDATION.md](BETA_VALIDATION.md):
+   both teams, panel modes, loading, Tab, native Live Tags and tooltips, Alt
+   changes, own/dead/hidden players, missing and late ratings, overhead markers
+   and the installed modpack. Record pass/fail/not-tested evidence.
 5. Obtain explicit maintainer confirmation of in-game functionality and a
    separate publication decision. Check the source and license obligations
    for the patched client movie and all bundled components.
