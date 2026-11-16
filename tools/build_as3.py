@@ -50,7 +50,6 @@ Runs on Python 3.
 """
 import argparse
 import hashlib
-import io
 import json
 import shutil
 import struct
@@ -125,27 +124,59 @@ CLIENT_LIBS = (
 )
 
 
+HTTP_TIMEOUT_SECONDS = 90
+DOWNLOAD_CHUNK_BYTES = 1024 * 1024
+
+
 def fetch_royale() -> None:
     if MXMLC_JAR.is_file():
+        print('royale   using cached compiler', flush=True)
         return
-    print(f'royale   downloading {ROYALE_URL} (about 200 MB)')
-    with urllib.request.urlopen(ROYALE_URL) as response:
-        data = response.read()
-    with zipfile.ZipFile(io.BytesIO(data)) as archive:
-        archive.extractall(ROYALE)
+    WORK.mkdir(parents=True, exist_ok=True)
+    temporary_archive = WORK / 'apache-royale-0.9.12-bin-js-swf.zip.part'
+    downloaded = 0
+    next_report = 16 * DOWNLOAD_CHUNK_BYTES
+    print(f'royale   downloading {ROYALE_URL} (about 191 MiB)', flush=True)
+    try:
+        # Stream to disk instead of holding a roughly 200 MB archive in memory.
+        # A socket timeout and visible progress make stalled CI downloads diagnosable.
+        with urllib.request.urlopen(ROYALE_URL, timeout=HTTP_TIMEOUT_SECONDS) as response:
+            with temporary_archive.open('wb') as out:
+                while True:
+                    chunk = response.read(DOWNLOAD_CHUNK_BYTES)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+                    downloaded += len(chunk)
+                    if downloaded >= next_report:
+                        print(f'royale   received {downloaded // DOWNLOAD_CHUNK_BYTES} MiB', flush=True)
+                        next_report += 16 * DOWNLOAD_CHUNK_BYTES
+        print(f'royale   extracting {downloaded // DOWNLOAD_CHUNK_BYTES} MiB', flush=True)
+        with zipfile.ZipFile(temporary_archive) as archive:
+            archive.extractall(ROYALE)
+    except (urllib.error.URLError, TimeoutError, OSError, zipfile.BadZipFile) as error:
+        raise SystemExit(
+            f'royale download/extraction failed after {downloaded // DOWNLOAD_CHUNK_BYTES} MiB '
+            f'from {ROYALE_URL}: {error}'
+        ) from error
+    finally:
+        temporary_archive.unlink(missing_ok=True)
     if not MXMLC_JAR.is_file():
         raise SystemExit(f'no mxmlc.jar after extracting to {ROYALE}')
 
 
 def fetch(url: str, what: str) -> bytes:
-    """One file off the network, failing with the URL rather than a traceback."""
+    """Fetch one file with a socket timeout and visible per-file progress."""
+    print(f'libs     fetching {what}: {url}', flush=True)
     try:
-        with urllib.request.urlopen(url) as response:
-            return response.read()
+        with urllib.request.urlopen(url, timeout=HTTP_TIMEOUT_SECONDS) as response:
+            data = response.read()
     except urllib.error.HTTPError as error:
-        raise SystemExit(f'{what}: HTTP {error.code} from {url}')
-    except urllib.error.URLError as error:
-        raise SystemExit(f'{what}: {error.reason} for {url}')
+        raise SystemExit(f'{what}: HTTP {error.code} from {url}') from error
+    except (urllib.error.URLError, TimeoutError, OSError) as error:
+        raise SystemExit(f'{what}: download failed from {url}: {error}') from error
+    print(f'libs     fetched {what} ({len(data)} bytes)', flush=True)
+    return data
 
 
 def read_client_file(client_files: Path, name: str) -> bytes:
@@ -207,12 +238,16 @@ def compile_swf(entry: Path, output: Path, extra=()) -> None:
     frameworks = ROYALE / 'royale-asjs' / 'frameworks'
     # Called directly rather than through mxmlc.bat: cmd splits arguments on
     # '=', which mangles -output=... before the compiler sees it.
-    result = subprocess.run(
-        [java, '-Dsun.io.useCanonCaches=false', '-Xmx512m',
-         f'-Droyalelib={frameworks}', '-jar', str(MXMLC_JAR),
-         '--targets=SWF', '-load-config+=build-config.xml',
-         f'-output={output}', *extra, str(entry)],
-        cwd=AS3, capture_output=True, text=True, errors='replace')
+    print(f'swf      compiling {entry}', flush=True)
+    try:
+        result = subprocess.run(
+            [java, '-Dsun.io.useCanonCaches=false', '-Xmx512m',
+             f'-Droyalelib={frameworks}', '-jar', str(MXMLC_JAR),
+             '--targets=SWF', '-load-config+=build-config.xml',
+             f'-output={output}', *extra, str(entry)],
+            cwd=AS3, capture_output=True, text=True, errors='replace', timeout=300)
+    except subprocess.TimeoutExpired as error:
+        raise SystemExit(f'AS3 compiler timed out after 300 seconds for {entry}') from error
     if result.returncode != 0 or not output.is_file():
         raise SystemExit(f'compile failed:\n{result.stdout}\n{result.stderr}')
     print(f'swf      {output} ({output.stat().st_size} bytes)')
