@@ -1,0 +1,844 @@
+"""Checks for the battles the mod sends: what is extracted, what is never sent twice,
+and what the client is allowed to forget."""
+
+import json
+import os
+import shutil
+import tempfile
+
+from checks.common import check
+
+
+# A real battle's results, trimmed to what the extractor reads, out of
+# 20260926_2141_ussr-R97_Object_140_59_asia_great_wall.wotreplay. Real rather
+# than invented because the two values this file most needs to be right about
+# are counter-intuitive and both appear here: a survivor's `deathReason` is -1
+# and NOT 0 (0 is a real reason, and the commonest one), and a casualty's
+# `health` is NEGATIVE on the shot that overkills them.
+#
+# The map name, the gameplay and the client version are not in the results.
+# They are in a replay's meta block, which is why `payload` takes them: this
+# battle's were '59_asia_great_wall', 'ctf' and v.2.4.0.1.
+RESULTS = {
+    'arenaUniqueID': 19011738950705142,
+    'common': {'arenaCreateTime': 1790451702,
+               'arenaTypeID': 54,
+               'bonusType': 1,
+               'duration': 245,
+               'finishReason': 1,
+               'winnerTeam': 1},
+    'personal': {'avatar': {'replayURL': 'recordings/eu_2.4.0_3-EU-202-20260926/'
+                                         '1790451702.EU.202.19011738950705142.'
+                                         '59_asia_great_wall.wotsrvreplay'}},
+    'vehicles': {
+        '13089208': [{'accountDBID': 531280131, 'team': 1, 'typeCompDescr': 6209,
+                      'damageDealt': 4374, 'damageAssistedRadio': 0,
+                      'damageAssistedTrack': 59, 'damageAssistedStun': 0,
+                      'damageBlockedByArmor': 0, 'damageReceived': 0,
+                      'shots': 18, 'directHits': 14, 'piercings': 11, 'spotted': 0,
+                      'kills': 1, 'lifeTime': 244, 'deathReason': -1,
+                      'capturePoints': 0, 'xp': 892, 'credits': 38307,
+                      'health': 2200, 'maxHealth': 2200}],
+        '13089212': [{'accountDBID': 595280968, 'team': 2, 'typeCompDescr': 8545,
+                      'damageDealt': 872, 'damageAssistedRadio': 0,
+                      'damageAssistedTrack': 0, 'damageAssistedStun': 0,
+                      'damageBlockedByArmor': 0, 'damageReceived': 2500,
+                      'shots': 4, 'directHits': 2, 'piercings': 2, 'spotted': 0,
+                      'kills': 0, 'lifeTime': 110, 'deathReason': 0,
+                      'capturePoints': 0, 'xp': 36, 'credits': 10487,
+                      'health': -3, 'maxHealth': 2500}],
+    },
+}
+
+ARENA = ('59_asia_great_wall', 'ctf')
+
+
+def check_battles():
+    from unicum.battles.extract import SURVIVED, payload
+    from unicum.battles.naming import client_version, cluster
+
+    check('the cluster comes out of the results\' own replayURL',
+          cluster(RESULTS['personal']['avatar']['replayURL']) == 'EU-202')
+    check('a battle with no recording on the server has no cluster',
+          cluster(None) is None and cluster('') is None and cluster('nonsense') is None)
+
+    # The exe reports 2.4.0.0 for every 2.4.0.x, and the difference between
+    # 2.4.0.1 and 2.4.0.2 is what decides whether a replay still plays.
+    check('the client version is read to its last part, non-breaking spaces and all',
+          client_version(u'World\xa0of\xa0Tanks v.2.4.0.1 #952') == '2.4.0.1')
+    check('a byte string with a UTF-8 non-breaking space reads the same',
+          client_version(u'World\xa0of\xa0Tanks v.2.4.0.1 #952'.encode('utf-8')) == '2.4.0.1')
+    check('an unreadable version is left out',
+          client_version(None) is None and client_version('World of Tanks') is None)
+
+    battle = payload(RESULTS, ARENA, '2.4.0.1')
+    check('the battle id crosses as text, every digit of it',
+          battle['arenaUniqueId'] == '19011738950705142')
+    check('the start is the battle\'s own, from the server',
+          battle['startedAt'] == 1790451702)
+    check('the map and the gameplay are the ones the client named',
+          battle['mapName'] == '59_asia_great_wall' and battle['gameplayId'] == 'ctf')
+    check('the mode, length, winner and ending come from the results',
+          (battle['battleType'], battle['duration'], battle['winnerTeam'],
+           battle['finishReason']) == (1, 245, 1, 1))
+    check('the cluster and the client version ride along',
+          battle['server'] == 'EU-202' and battle['clientVersion'] == '2.4.0.1')
+
+    survivor, casualty = battle['vehicles']
+    check('the vehicles come out in a stable order, by their battle id',
+          [vehicle['id'] for vehicle in battle['vehicles']] == [13089208, 13089212])
+    check('a vehicle keeps its account, team and tank',
+          (survivor['account'], survivor['team'], survivor['tank']) == (531280131, 1, 6209))
+    check('the game\'s own words are renamed to ours, not passed through',
+          (survivor['damage'], survivor['track'], survivor['hits'],
+           survivor['blocked']) == (4374, 59, 14, 0))
+    # The two the schema was wrong about until real battles were read.
+    check('a survivor is -1, not 0',
+          survivor['deathReason'] == SURVIVED and survivor['health'] == 2200)
+    check('a casualty\'s reason can be 0, and their health can be negative',
+          casualty['deathReason'] == 0 and casualty['health'] == -3)
+    # Empty on about 99 of every 100 vehicles, so the key is absent rather
+    # than an empty list repeated thirty times.
+    check('a vehicle that won no medal carries no medals key',
+          'medals' not in survivor and 'medals' not in casualty)
+
+    with_medals = dict(RESULTS['vehicles']['13089208'][0])
+    with_medals['achievements'] = [1614, 521, 1616]
+    decorated = payload(
+        dict(RESULTS, vehicles={'13089208': [with_medals]}), ARENA, 'v')
+    check("the medals a battle awarded ride along, by the game's own ids",
+          decorated['vehicles'][0]['medals'] == [1614, 521, 1616])
+
+    rich = dict(RESULTS['vehicles']['13089212'][0])
+    rich.update({'sniperDamageDealt': 640, 'noDamageDirectHitsReceived': 7,
+                 'mileage': 1830, 'killerID': 13089208, 'healthRepair': 0,
+                 'tkills': 1, 'explosionHitsReceived': 2})
+    line = payload(dict(RESULTS, vehicles={'13089212': [rich]}),
+                   ARENA, 'v')['vehicles'][0]
+    check('the rest of what the game shows about a player rides along',
+          (line['sniper'], line['bounced'], line['mileage']) == (640, 7, 1830))
+    check('allies destroyed and splash hits taken ride along',
+          (line['teamKills'], line['splashReceived']) == (1, 2))
+    check('who destroyed them is named, by their battle vehicle id',
+          line['killer'] == 13089208)
+    # Thirty vehicles carrying ten zeroes each would be a third of the
+    # payload spent saying nothing.
+    check('a figure that is zero is not sent at all',
+          'repaired' not in line and 'splash' not in line
+          and 'teamDamage' not in line)
+
+    check('results that describe no battle are not sent',
+          payload(None, ARENA, 'v') is None
+          and payload({}, ARENA, 'v') is None
+          and payload(RESULTS, None, 'v') is None)
+    # The arena cache answers nothing for an arena this client does not know,
+    # and a battle whose map we cannot name is one nobody could read back.
+    check('a battle whose arena the client cannot name is not sent',
+          payload(RESULTS, (None, None), 'v') is None)
+
+
+def check_battle_lives():
+    """A vehicle that respawned did all of it, and the battle ended on one life."""
+    from unicum.battles.extract import SURVIVED, payload
+
+    base = RESULTS['vehicles']['13089212'][0]
+    # Two deaths, the longer of them carrying a killer.
+    longer = dict(base, killerID=13089208)
+    shorter = dict(base, damageDealt=500, lifeTime=80, deathReason=2,
+                   health=0, maxHealth=1800, xp=40)
+    results = dict(RESULTS, vehicles={'13089212': [longer, shorter]})
+
+    vehicle = payload(results, ARENA, 'v')['vehicles'][0]
+    check('the deeds of every life are added up',
+          vehicle['damage'] == 1372 and vehicle['lifeTime'] == 190 and vehicle['xp'] == 76)
+    # The client hands the records over in no order of its own, so what the
+    # battle left them cannot be read off the last of them.
+    check('with no life surviving, the longest one answers for how it left them',
+          vehicle['deathReason'] == 0 and vehicle['health'] == -3
+          and vehicle['killer'] == 13089208)
+    check('and the whole vehicle is the same whichever order they arrived in',
+          payload(dict(RESULTS, vehicles={'13089212': [shorter, longer]}),
+                  ARENA, 'v')['vehicles'][0] == vehicle)
+    # Measured on one Frontline battle: 8 of the 44 vehicles that had a
+    # surviving life were handed it over FIRST. Read as the last record, they
+    # were reported destroyed, by the killer of a life they had already
+    # respawned out of.
+    alive = dict(base, deathReason=SURVIVED, health=900, lifeTime=20)
+    survived = payload(dict(RESULTS, vehicles={'13089212': [alive, shorter]}),
+                       ARENA, 'v')['vehicles'][0]
+    check('a vehicle alive at the end reads as alive, wherever that life sits',
+          survived['deathReason'] == SURVIVED and survived['health'] == 900
+          and 'killer' not in survived)
+    check('the biggest tank they fielded is the one reported',
+          vehicle['maxHealth'] == 2500)
+    # The economy exists for the reporting client alone: the results carry
+    # it under `personal.<vehicle>` and the other twenty-nine players have
+    # none of it at any price.
+    earned = dict(RESULTS, personal={
+        'avatar': {'replayURL': ''},
+        '16897': {'originalCredits': 37524, 'subtotalCredits': 56286,
+                  # Tuples, because that is what the client hands over: its
+                  # own results schema declares both as `tuple` and DictPacker
+                  # keeps the type. This fixture held lists, having been lifted
+                  # out of a .wotreplay whose second block is JSON, and that
+                  # one difference let a release ship with no ammunition or
+                  # supplies cost on any battle.
+                  'autoRepairCost': 2120, 'autoLoadCost': (32875, 0),
+                  'autoEquipCost': (6000, 0, 0), 'credits': 64729,
+                  'originalXP': 1077, 'premiumVehicleXP': 485, 'xp': 3959,
+                  'freeXP': 174, 'tmenXP': 2455, 'crystal': 0,
+                  'originalFreeXP': 68, 'wotPlusCredits': 10356,
+                  'wotPlusXP': 203, 'piggyBank': 17087,
+                  'dailyXPFactor10': 20, 'isPremium': True},
+    })
+    own = payload(earned, ARENA, 'v')['personal']
+    check('what the battle earned the reporting player rides along',
+          (own['creditsBase'], own['credits'], own['xp'], own['crewXp'])
+          == (37524, 64729, 3959, 2455))
+    check('a cost reported as [credits, gold] is read as its credits half',
+          (own.get('ammoCost'), own.get('suppliesCost')) == (32875, 6000))
+    check("the game's report lines beyond the totals ride along",
+          (own['freeXpBase'], own['creditsWotPlus'], own['xpWotPlus'],
+           own['piggyBank']) == (68, 10356, 203, 17087))
+    check('the first victory of the day is sent as its factor',
+          own['xpDailyFactor'] == 20)
+    plain = dict(earned, personal={'avatar': {}, '16897': dict(
+        earned['personal']['16897'], dailyXPFactor10=10)})
+    check('a battle that was not the first victory carries no factor',
+          'xpDailyFactor' not in payload(plain, ARENA, 'v')['personal'])
+    check('a figure that is zero is left out of the economy too',
+          'bonds' not in own and 'creditsBooster' not in own)
+    check('the premium account is said once, not as a factor',
+          own['premium'] is True)
+    # Every other player in the battle has no economy at all.
+    check('a battle with no personal block carries no economy',
+          'personal' not in payload(RESULTS, ARENA, 'v'))
+
+    check('a bot has no account to name',
+          'account' not in payload(
+              {'arenaUniqueID': 1, 'common': {'arenaCreateTime': 1, 'bonusType': 1},
+               'vehicles': {'7': [{'team': 1, 'typeCompDescr': 1, 'maxHealth': 1}]}},
+              ARENA, 'v')['vehicles'][0])
+
+
+def check_battle_tanks():
+    """A Frontline vehicle names every tank it fought in, and earns for all of them."""
+    from unicum.battles.extract import SURVIVED, payload
+
+    # The shape the client hands over for a player who respawned in two other
+    # tanks: one record per tank under the same vehicle id.
+    base = RESULTS['vehicles']['13089208'][0]
+    progetto = dict(base, typeCompDescr=56097, damageDealt=6817, kills=2,
+                    lifeTime=600, deathReason=0, xp=900)
+    second = dict(base, typeCompDescr=7169, damageDealt=4000, kills=1,
+                  lifeTime=400, deathReason=1, xp=500)
+    third = dict(base, typeCompDescr=4929, damageDealt=2158, kills=0,
+                 lifeTime=164, deathReason=SURVIVED, xp=300)
+    # Handed over with the surviving life first, as the client really does.
+    results = dict(RESULTS, vehicles={'13089208': [third, progetto, second]})
+    vehicle = payload(results, ARENA, 'v')['vehicles'][0]
+    # Biggest share first, and deliberately not a guess at the order they were
+    # played: a list read top to bottom reads as a sequence, and the data holds
+    # no sequence. The one chronology in it, that the surviving tank was the
+    # last, is on each entry as its own deathReason.
+    check('every tank of a respawning vehicle is named, biggest share first',
+          [one['tank'] for one in vehicle['tanks']] == [56097, 7169, 4929])
+    check('in that order whatever order the client handed them over in',
+          payload(dict(RESULTS, vehicles={'13089208': [second, third, progetto]}),
+                  ARENA, 'v')['vehicles'][0]['tanks'] == vehicle['tanks'])
+    check('and the vehicle reads as the surviving life left it',
+          vehicle['deathReason'] == SURVIVED)
+    check('each tank carries its own share of the battle',
+          [one['damage'] for one in vehicle['tanks']] == [6817, 4000, 2158]
+          and [one['deathReason'] for one in vehicle['tanks']] == [0, 1, SURVIVED])
+    check('the totals are still the whole battle',
+          vehicle['damage'] == 12975 and vehicle['kills'] == 3)
+    check('a vehicle that fought in one tank carries no breakdown',
+          all('tanks' not in one for one in payload(RESULTS, ARENA, 'v')['vehicles']))
+
+    one = {'originalCredits': 10000, 'credits': 20000, 'xp': 900,
+           'autoLoadCost': (3000, 0), 'damageRating': 64, 'dailyXPFactor10': 20}
+    two = {'originalCredits': 5000, 'credits': 8000, 'xp': 500,
+           'autoLoadCost': (1000, 0), 'damageRating': 80, 'dailyXPFactor10': 10}
+    earned = payload(dict(results, personal={
+        'avatar': {}, 56097: one, 7169: two}), ARENA, 'v')['personal']
+    check('the economy of every tank played is added up, as the game does',
+          (earned['creditsBase'], earned['credits'], earned['xp'],
+           earned['ammoCost']) == (15000, 28000, 1400, 4000))
+    check('a factor is not added up',
+          earned['xpDailyFactor'] == 20)
+    check('a mark of excellence is not sent when there is no saying whose gun it is',
+          'markPercent' not in earned)
+    single = payload(dict(results, personal={'avatar': {}, 56097: one}),
+                     ARENA, 'v')['personal']
+    check('a battle in one tank still sends its mark',
+          single['markPercent'] == 64)
+
+
+def check_battle_claims():
+    """Which battles are still worth asking the client about, and which are spent.
+
+    The gap these cover: the client only posts a battle's results when it SHOWS
+    them, so a player who queues straight back up without the results window
+    opening leaves a battle this module never hears of. Two of nine went that
+    way in one afternoon. The arena id is therefore written down when the battle
+    starts and the results are asked for at the garage.
+    """
+    from unicum.battles.store import (_CLAIM_DEADLINE, _MAX_CLAIMS, claimable,
+                                      spent)
+
+    now = 1000000.0
+    played = {
+        'fresh': {'at': now - 60, 'asked': 0},
+        'asked': {'at': now - 120, 'asked': 2},
+        'done': {'at': now - 180, 'asked': 1},
+        'queued': {'at': now - 240, 'asked': 1},
+        'old': {'at': now - _CLAIM_DEADLINE - 1, 'asked': 0},
+        'exhausted': {'at': now - 300, 'asked': _MAX_CLAIMS},
+    }
+    wanted = claimable(played, ['done'], set(['queued']), now)
+
+    check('a battle nobody showed us is asked about',
+          'fresh' in wanted and 'asked' in wanted)
+    check('a battle already answered for is not asked about again',
+          'done' not in wanted)
+    check('nor is one already waiting in the queue', 'queued' not in wanted)
+    check('a battle too old to be ingested is left alone', 'old' not in wanted)
+    check('and one asked about too often is given up on',
+          'exhausted' not in wanted)
+    # Oldest first, so a backlog drains in the order it was played rather than
+    # letting the newest battle starve the rest.
+    check('the oldest still-wanted battle goes first',
+          wanted == ['asked', 'fresh'])
+
+    gone = set(spent(played, ['done'], set(['queued']), now))
+    check('what is written down is forgotten',
+          'done' in gone and 'queued' in gone)
+    check('so is what nobody will ever answer for',
+          'old' in gone and 'exhausted' in gone)
+    check('and what is still owed is kept',
+          'fresh' not in gone and 'asked' not in gone)
+    check('nothing is both worth asking about and spent',
+          not (set(wanted) & gone))
+
+
+def check_battle_answer():
+    """What the server said, and what the client is therefore allowed to forget.
+
+    This is where the worst defect of the first version lived: the client read
+    counts, so an HTML error page served with a 200 parsed as "nothing was
+    stored" and the whole queue -- the only copy of those battles -- was
+    deleted in one flush.
+    """
+    from unicum.battles.store import read_answer, settled
+
+    check('an answer naming what it did is read',
+          read_answer('{"stored": ["1", "2"], "known": ["3"], "rejected":'
+                      ' [{"arenaUniqueId": "9", "reason": "not_a_player"}]}')
+          == (['1', '2'], ['3'], [('9', 'not_a_player')]))
+    check('an answer that stored nothing is still an answer',
+          read_answer('{"stored": [], "known": [], "rejected": []}') == ([], [], []))
+
+    # Each of these used to read as "the server stored nothing", which the
+    # caller acted on by emptying the queue.
+    check('an HTML page served with a 200 is not an answer',
+          read_answer('<html><body>Sign in</body></html>') is None)
+    check('an empty body is not an answer', read_answer('') is None)
+    check('nothing at all is not an answer', read_answer(None) is None)
+    check('a JSON body that names none of the three lists is not an answer',
+          read_answer('{"ok": true}') is None and read_answer('[]') is None)
+    check('counts alone are not an answer, which is what they used to be',
+          read_answer('{"stored": 2, "known": 1}') is None)
+
+    one, two, three = ({'arenaUniqueId': '1'}, {'arenaUniqueId': '2'},
+                       {'arenaUniqueId': '3'})
+    check('only what the server named leaves the queue',
+          settled([one, two, three], ['1']) == [two, three])
+    # A battle the server has told us it will not take is one we would
+    # otherwise offer for ever, so it is settled like an accepted one.
+    check('a refused battle is settled too, not retried for ever',
+          settled([one, two], ['1', '2']) == [])
+    check('a battle the answer did not mention is kept',
+          settled([one, two], []) == [one, two])
+
+
+def check_battle_queue():
+    """The file on disk: appended a line at a time, never rewritten on the event."""
+    from unicum.battles.store import (QUEUE, _MAX_QUEUED, append_queued,
+                                      load_queue, queued, save_queue)
+
+    workdir = tempfile.mkdtemp(prefix='unicum-battles-')
+    original = os.getcwd()
+    try:
+        os.chdir(workdir)
+        check('an empty store reads as an empty queue', load_queue() == [])
+        append_queued({'arenaUniqueId': '1', 'mapName': 'a'})
+        append_queued({'arenaUniqueId': '2', 'mapName': 'b'})
+        check('appended battles read back in order',
+              [row['arenaUniqueId'] for row in load_queue()] == ['1', '2'])
+        # Appending is what keeps this off the thread that draws the game: it
+        # must not read or rewrite what is already there.
+        check('appending leaves the earlier lines alone',
+              open(QUEUE, 'rb').read().count(b'\n') == 2)
+        with open(QUEUE, 'ab') as handle:
+            handle.write(b'{"arenaUniqueId": "3", "mapN')
+        check('a line torn by a crash costs only itself',
+              [row['arenaUniqueId'] for row in load_queue()] == ['1', '2'])
+        save_queue([{'arenaUniqueId': '2'}])
+        check('a rewrite keeps exactly what it was given',
+              [row['arenaUniqueId'] for row in load_queue()] == ['2'])
+    finally:
+        os.chdir(original)
+        shutil.rmtree(workdir, ignore_errors=True)
+
+    one = {'arenaUniqueId': '1'}
+    two = {'arenaUniqueId': '2'}
+    check('a battle joins the queue', queued([], one) == [one])
+    check('the same battle twice is still one battle', queued([one], dict(one)) == [one])
+    check('the queue keeps its order', queued([one], two) == [one, two])
+
+    full = [{'arenaUniqueId': str(n)} for n in range(_MAX_QUEUED)]
+    fresh = {'arenaUniqueId': 'new'}
+    check('a full queue stays at its cap and drops its oldest, never the newest',
+          len(queued(full, fresh)) == _MAX_QUEUED
+          and queued(full, fresh)[0] == {'arenaUniqueId': '1'}
+          and queued(full, fresh)[-1] == fresh)
+    check('a battle already queued costs nobody their place',
+          queued(full, dict(full[0]))[0] == {'arenaUniqueId': '1'}
+          and len(queued(full, dict(full[0]))) == _MAX_QUEUED)
+
+
+class _FakeSession(object):
+    """Enough of the session for the reporter, remembering what it was asked."""
+
+    def __init__(self):
+        self.patched = []
+        self.subscribed = []
+        self.scheduled = []
+        self.fetched = []
+
+    def patch(self, holder, name, build):
+        original = getattr(holder, name)
+        replacement = build(original)
+        setattr(holder, name, replacement)
+        self.patched.append((holder, name, original))
+        return replacement
+
+    def subscribe(self, event, handler):
+        self.subscribed.append(handler)
+        return handler
+
+    def callback(self, delay, func):
+        self.scheduled.append((delay, func))
+
+    def fetch(self, url, callback, **kwargs):
+        self.fetched.append((url, callback, kwargs))
+
+
+class _Settings(object):
+    def __init__(self, sends=True):
+        self.sends = sends
+
+    def sends_battles(self):
+        return self.sends
+
+
+class _Arena(object):
+    """What ArenaType.g_cache hands back, as far as this module reads it."""
+
+    geometryName = '59_asia_great_wall'
+    gameplayName = 'ctf'
+
+
+def _with_arena_cache():
+    """Stub ArenaType so the extractor can name the sample battle's map.
+
+    The map's name is not in the results, it is in the client's arena cache,
+    which the fake client has no reason to carry. Without it `payload` is
+    right to refuse the battle, and the reporter check would be testing that
+    refusal rather than the patch.
+    """
+    import sys
+    import types
+    module = sys.modules.get('ArenaType')
+    if module is None:
+        module = types.ModuleType('ArenaType')
+        sys.modules['ArenaType'] = module
+    module.g_cache = {RESULTS['common']['arenaTypeID']: _Arena()}
+    return module
+
+
+def _with_message_types(types):
+    """Stub the client's map of battle result message types.
+
+    `_is_battle_results` reads it per message, for the reason written there:
+    the modes register their own types while the client starts, so the random
+    battle's 2 is the only one a constant would catch.
+    """
+    import sys
+    import types as modules
+    module = sys.modules.get('battle_results')
+    if module is None:
+        module = modules.ModuleType('battle_results')
+        sys.modules['battle_results'] = module
+    module.ARENA_BONUS_TYPE_TO_SM_TYPE_BATTLE_RESULT = types
+    return module
+
+
+def _with_player_account(is_player):
+    """Stub `helpers.isPlayerAccount`, which decides whether the cache exists.
+
+    The results cache hangs off the Account, so a battle announced before the
+    garage has nowhere to be asked about.
+    """
+    import sys
+    import types as modules
+    module = sys.modules.get('helpers')
+    if module is None:
+        module = modules.ModuleType('helpers')
+        sys.modules['helpers'] = module
+    module.isPlayerAccount = lambda: is_player
+    return module
+
+
+class _Announcement(object):
+    """A service channel message, as the messenger hands one over."""
+
+    def __init__(self, type_, arena_id):
+        self.type = type_
+        self.data = {'arenaUniqueID': arena_id}
+
+
+def check_announced_battles():
+    """What happens when the server announces a battle, and when it must not.
+
+    The point of these: asking the results cache the instant a battle is
+    announced aims straight at the client's own request for the same battle.
+    The cache serves one at a time and answers the loser `RES_COOLDOWN`, which
+    is -5, and the client reads any negative code as failure and calls
+    `hideBattleResults()`. Our request would close the player's results
+    screen (issue #5), and the announcement lands about when that screen opens
+    by itself.
+    """
+    from unicum.battles.claiming import _ANNOUNCED_DELAY, _is_battle_results
+    from unicum.battles.reporter import Reporter
+
+    # Random is 2; every other mode registers past the base enum while the
+    # client starts, so 157 is as real a battle result type as 2 is.
+    _with_message_types({1: 2, 22: 157, 43: 160})
+
+    check('a random battle announcement is recognised',
+          _is_battle_results(_Announcement(2, '111')))
+    check('so is a mode that registered its own type',
+          _is_battle_results(_Announcement(157, '222')))
+    check('an unrelated service channel message is not',
+          not _is_battle_results(_Announcement(5, '333')))
+    check('nor is a message with no type at all',
+          not _is_battle_results(object()))
+
+    workdir = tempfile.mkdtemp(prefix='unicum-announced-')
+    original = os.getcwd()
+    try:
+        os.chdir(workdir)
+        session = _FakeSession()
+        reporter = Reporter(session, _Settings(), link=None)
+
+        reporter._on_announced(None, _Announcement(2, '444'))
+        check('an announced battle is not asked for in the same breath',
+              len(session.scheduled) == 1
+              and session.scheduled[0][0] == _ANNOUNCED_DELAY)
+        check('and nothing was asked of the client yet', not reporter._asking)
+
+        # A battle already written down is not asked about when its
+        # announcement turns up a second time.
+        # A list, not a set: it is capped at _MAX_SETTLED and kept in order.
+        reporter._settled.append('555')
+        reporter._on_announced(None, _Announcement(2, '555'))
+        session.scheduled[-1][1]()
+        check('a battle already settled asks for nothing',
+              '555' not in reporter._asking)
+
+        # The one case that is both free and certain: the client already holds
+        # the results, so the postResult patch has had them or is about to,
+        # and no request of ours can close the player's screen. Faked at
+        # `_client_has` because the real one needs the client's dependency
+        # container, and what is under test is what the reporter does with
+        # the answer rather than how it is obtained.
+        import unicum.battles.claiming as module
+        held = module._client_has
+        module._client_has = lambda arena_id: True
+        try:
+            reporter._ask_cache('777')
+            check('a battle the client already holds asks for nothing',
+                  '777' not in reporter._asking)
+
+            # And when it does not hold them, the account still has to be the
+            # player: the announcement can arrive before the garage, and the
+            # cache lives on the Account. That battle is left to `_claim`
+            # rather than lost.
+            module._client_has = lambda arena_id: False
+            _with_player_account(False)
+            reporter._ask_cache('888')
+            check('an announcement before the garage is left to the next claim',
+                  '888' not in reporter._asking)
+        finally:
+            module._client_has = held
+
+        # Off means off here too: a player not sharing battles is not asked
+        # about on the strength of an announcement.
+        quiet = Reporter(_FakeSession(), _Settings(sends=False), link=None)
+        quiet._ask_cache('666')
+        check('sharing switched off asks for nothing', not quiet._asking)
+    finally:
+        os.chdir(original)
+        shutil.rmtree(workdir, ignore_errors=True)
+
+
+def check_battle_reporter():
+    """The patch on the client's own results, and the in-flight guard."""
+    from unicum.battles.reporter import Reporter
+    from unicum.battles.sending import _BUSY_DEADLINE, _seconds
+
+    workdir = tempfile.mkdtemp(prefix='unicum-reporter-')
+    original = os.getcwd()
+    try:
+        os.chdir(workdir)
+        _with_arena_cache()
+        session = _FakeSession()
+        reporter = Reporter(session, _Settings(), link=None)
+
+        # The client's own postResult, which every mode passes through and
+        # whose return value requestResults reads as "were the results
+        # posted". A wrapper that swallowed it, or that let our own work
+        # raise, would make the client believe the battle never arrived.
+        class FakeService(object):
+            def postResult(self, result, needToShowUI=True):
+                return 'the client answer'
+
+        wrapped = reporter._wrap_post(FakeService.postResult.__func__
+                                      if hasattr(FakeService.postResult, '__func__')
+                                      else FakeService.postResult)
+        service = FakeService()
+        check('the client\'s own answer is handed back untouched',
+              wrapped(service, RESULTS, True) == 'the client answer')
+        check('one battle reached the queue through the patch',
+              [row['arenaUniqueId'] for row in reporter._queue] == ['19011738950705142'])
+        check('the same results again do not queue it twice',
+              wrapped(service, RESULTS, True) == 'the client answer'
+              and len(reporter._queue) == 1)
+
+        # Results the extractor cannot read must not stop the client.
+        check('unreadable results still let the client post',
+              wrapped(service, None, True) == 'the client answer'
+              and len(reporter._queue) == 1)
+
+        # A battle the server has already answered for: the client reposts
+        # when the player opens it from the notification centre.
+        reporter._queue = []
+        reporter._settled = ['19011738950705142']
+        wrapped(service, RESULTS, True)
+        check('a battle the server already took is not queued again',
+              reporter._queue == [])
+
+        # The in-flight guard. Every release of it lives in a callback, and
+        # the WGNI token requester is a one-slot singleton shared with the
+        # loadout upload, so one overlap used to stop this client for good.
+        reporter._busy_since = None
+        check('nothing in flight means free', reporter._free(1000.0) is True)
+        reporter._busy_since = 1000.0
+        check('a flush in flight blocks another', reporter._free(1001.0) is False)
+        check('one that has run past the deadline does not block for ever',
+              reporter._free(1000.0 + _BUSY_DEADLINE + 1) is True)
+    finally:
+        os.chdir(original)
+        shutil.rmtree(workdir, ignore_errors=True)
+
+    check('the server\'s own Retry-After is preferred',
+          _seconds({'Retry-After': '42'}) == 42
+          and _seconds({'retry-after': 42}) == 42)
+    check('a nonsense Retry-After falls back to our own wait',
+          _seconds({'Retry-After': 'soon'}) is None
+          and _seconds({'Retry-After': '0'}) is None
+          and _seconds({'Retry-After': '999999'}) is None
+          and _seconds(None) is None)
+
+
+def check_battle_blame():
+    """A refusal the body earned costs one battle, never the queue behind it.
+
+    Measured, not imagined: one vehicle in one skirmish arrived without a
+    `typeCompDescr`, the server refused the lot it travelled in with a 400,
+    and because a 400 was handled like a dropped connection the same lot went
+    out at every garage and was refused every time. Thirty-five innocent
+    battles sat behind it for a day, and the only clue was a warning that did
+    not even carry the server's reason.
+    """
+    from unicum.battles.reporter import Reporter
+    from unicum.battles.sending import _BATCH, _PAYLOAD_FAULTS
+
+    workdir = tempfile.mkdtemp(prefix='unicum-blame-')
+    original = os.getcwd()
+    try:
+        os.chdir(workdir)
+        _with_arena_cache()
+        reporter = Reporter(_FakeSession(), _Settings(), link=None)
+
+        # Standing in for the wire, and recording the queue each attempt saw.
+        sent = []
+        reporter._post = lambda: sent.append(len(reporter._queue))
+
+        rows = [{'arenaUniqueId': str(n)} for n in range(1, 6)]
+        reporter._queue = list(rows)
+        reporter._settled = []
+
+        # A batch refused as a unit says nothing about which battle did it, so
+        # nothing may be dropped on that answer alone.
+        reporter._blame(rows, 400, '{"error":"invalid_body"}')
+        check('a refused batch costs no battle yet',
+              [row['arenaUniqueId'] for row in reporter._queue]
+              == ['1', '2', '3', '4', '5'])
+        check('a refused batch narrows to one battle per request',
+              reporter._batch == 1)
+        check('and goes back out at once, not at the next garage', sent == [5])
+
+        # Alone and still refused: this one is the cause, and no later garage
+        # will take it. Keeping it would stop the four behind it for good.
+        reporter._blame(rows[:1], 400, '{"error":"invalid_body"}')
+        check('a battle refused on its own leaves the queue',
+              [row['arenaUniqueId'] for row in reporter._queue]
+              == ['2', '3', '4', '5'])
+        check('it is written down so it is never declared again',
+              reporter._settled == ['1'])
+        check('the batch goes back to full size once it is gone',
+              reporter._batch == _BATCH)
+        check('and the battles behind it leave immediately', sent == [5, 4])
+
+        # A battle with no id cannot be remembered, only dropped: `None` in
+        # the settled list would match the next battle that has no id either.
+        reporter._queue = [{'mapName': 'nowhere'}, {'arenaUniqueId': '9'}]
+        reporter._settled = []
+        reporter._blame([{'mapName': 'nowhere'}], 400, 'no id')
+        check('a battle with no id is dropped without being remembered',
+              reporter._queue == [{'arenaUniqueId': '9'}]
+              and reporter._settled == [])
+
+        # The whole point of the distinction. An outage is not the battles'
+        # fault and must not cost a single one, which is why this is a list of
+        # two codes and not a test on the 4xx range.
+        check('an outage never blames the battles',
+              not [code for code in (401, 403, 404, 429, 500, 502, 503)
+                   if code in _PAYLOAD_FAULTS])
+        check('a body refused for what it says, or for its size, does',
+              400 in _PAYLOAD_FAULTS and 413 in _PAYLOAD_FAULTS)
+    finally:
+        os.chdir(original)
+        shutil.rmtree(workdir, ignore_errors=True)
+
+
+def check_battle_setting():
+    """There is no box that stops the uploads, and the hiding box stops nothing."""
+    from unicum.settings import DEFAULTS, validate
+    from unicum.settings_window.codec import from_window, to_window
+    from unicum.settings_window.labels import HIDE_BATTLES_VAR
+
+    # The battles are what the site is built on, so the mod offers no way to
+    # stop sending them, its own master switch included. A player who turned the old
+    # box off, before it was removed, is sending again: the value left in
+    # their settings.json is ignored rather than honoured.
+    check('there is no setting that stops sending battles', 'sendBattles' not in DEFAULTS)
+    check('an old settings.json that turned them off is not honoured',
+          'sendBattles' not in validate({'sendBattles': False})
+          and _sends(validate({'sendBattles': False})) is True)
+    check('the window has no such box either',
+          'sendBattles' not in to_window(validate({}))
+          and 'sendBattles' not in from_window({'sendBattles': False}))
+    check('the mod being off still sends them',
+          _sends(validate({'enabled': False})) is True and _sends(validate({})) is True)
+
+    # What a player gets instead: their own list out of sight, owned by the
+    # site, so it never lands in settings.json.
+    values = validate({})
+    check('the battle-hiding box follows the site rather than settings.json',
+          to_window(values)[HIDE_BATTLES_VAR] is False
+          and to_window(values, True, False, True)[HIDE_BATTLES_VAR] is True
+          and HIDE_BATTLES_VAR not in from_window({HIDE_BATTLES_VAR: True}))
+    check('hiding the battles leaves them being sent',
+          _sends(validate({})) is True)
+
+
+def _sends(values):
+    """`sends_battles` read off a validated dictionary, without a session."""
+    from unicum.settings import Settings
+    settings = Settings.__new__(Settings)
+    settings._values = values
+    return settings.sends_battles()
+
+
+class _TeamScopeFinder(object):
+    """The client's own random-battle finder, cut to what `squads` calls.
+
+    `gui.battle_control.arena_info.squad_finder.TeamScopeNumberingFinder`:
+    a group counts when its size is in 2..3, numbered from 1 per team in
+    prebattle id order.
+    """
+
+    def __init__(self, teams):
+        self.groups = dict((team, {}) for team in teams)
+
+    def addVehicleInfo(self, team, prebattleID, vehicleID):
+        self.groups[team].setdefault(prebattleID, set()).add(vehicleID)
+
+    def findSquads(self):
+        for team in self.groups.values():
+            index = 0
+            for prebattle in sorted(team):
+                if len(team[prebattle]) in range(2, 4):
+                    index += 1
+                    for vehicle in team[prebattle]:
+                        yield vehicle, index
+
+
+def check_battle_squads():
+    """Platoons are numbered by the client's own finder, and never guessed."""
+    from unicum.battles.extract import payload
+    from unicum.battles.squads import finder_for, squads
+
+    def vehicle(account, team):
+        return [dict(RESULTS['vehicles']['13089208'][0], accountDBID=account,
+                     team=team)]
+
+    # Team 1: a platoon of two and a player alone. Team 2: a platoon of two,
+    # and four players sharing one id, which is what a training room looks
+    # like and is too many to be a platoon.
+    results = dict(RESULTS, vehicles={
+        '1': vehicle(11, 1), '2': vehicle(12, 1), '3': vehicle(13, 1),
+        '4': vehicle(21, 2), '5': vehicle(22, 2), '6': vehicle(23, 2),
+        '7': vehicle(24, 2), '8': vehicle(25, 2), '9': vehicle(26, 2),
+    }, players={
+        '11': {'team': 1, 'prebattleID': 500}, '12': {'team': 1, 'prebattleID': 500},
+        '13': {'team': 1, 'prebattleID': 0},
+        '21': {'team': 2, 'prebattleID': 700}, '22': {'team': 2, 'prebattleID': 700},
+        '23': {'team': 2, 'prebattleID': 900}, '24': {'team': 2, 'prebattleID': 900},
+        '25': {'team': 2, 'prebattleID': 900}, '26': {'team': 2, 'prebattleID': 900},
+    })
+    numbered = squads(results, _TeamScopeFinder)
+    check('a platoon is numbered from one in each team',
+          numbered == {1: 1, 2: 1, 4: 1, 5: 1})
+    check('a group too large to be a platoon is not one',
+          not any(vehicle in numbered for vehicle in (6, 7, 8, 9)))
+    # A training room has no finder in the client: the whole room shares one
+    # prebattle id, and three players in it would otherwise read as a platoon.
+    check('a mode without a finder has no platoons at all',
+          squads(results, None) == {})
+    check('outside the client there is no finder to ask',
+          finder_for(1) is None)
+
+    rows = dict((row['id'], row) for row in
+                payload(results, ARENA, 'v', numbered)['vehicles'])
+    check('the platoon number rides on the vehicles that were in one',
+          rows[1]['squad'] == 1 and rows[4]['squad'] == 1)
+    check('a vehicle that went in alone carries no squad key',
+          'squad' not in rows[3] and 'squad' not in rows[6])
+    check('a battle sent without platoons marks no vehicle',
+          not any('squad' in row for row in
+                  payload(results, ARENA, 'v')['vehicles']))

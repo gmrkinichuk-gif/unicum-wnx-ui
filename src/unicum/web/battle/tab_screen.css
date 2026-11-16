@@ -1,0 +1,101 @@
+/* Reflow native nodes, preserving Coherent bindings, tooltips and hit targets. */
+.unicum-roster-view .unicum-roster-content { margin-left: 0 !important; }
+.unicum-roster-team { min-width: 0; }
+.unicum-roster-heading { margin-left: 0 !important; }
+.unicum-roster-view [class*="FullStatsApp_teams_"] { margin-right: 0 !important; }
+.unicum-roster-row {
+    box-sizing: border-box;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 4rem;
+    border-left: 4rem solid #666b73;
+    border-right-width: 0 !important;
+    border-bottom: 1rem solid rgba(230,235,245,0.16) !important;
+    background-image: linear-gradient(rgba(12,16,22,0.82), rgba(12,16,22,0.82));
+    height: 28rem !important;
+    flex-wrap: nowrap !important;
+    color: #f2f3f5;
+}
+.unicum-roster-row > * { flex-shrink: 0; }
+.unicum-roster-row.unicum-roster-enemy { border-left-width: 0 !important; border-right-width: 4rem !important; border-right-style: solid; }
+.unicum-roster-row [class*="UserInfo_badge_"],
+.unicum-roster-row [class*="UserInfo_suffixBadge_"] {
+    flex: 0 0 24rem;
+    width: 24rem;
+    height: 24rem;
+    align-self: center;
+    background-position: center;
+}
+.unicum-roster-row [class*="UserInfo_badge_"] { margin: 0 4rem !important; }
+.unicum-roster-row [class*="UserInfo_user_info_"] {
+    order: 1;
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 0;
+    margin: 0 6rem !important;
+}
+.unicum-roster-row [class*="UserInfo_nickname_wrapper_"] {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 0;
+    margin: 0 !important;
+    justify-content: flex-start !important;
+}
+.unicum-roster-row [class*="UserInfo_userNameWrapper_"] { flex: 0 1 auto !important; min-width: 0; }
+.unicum-roster-row [class*="UserInfo_userName_"] { min-width: 0; }
+.unicum-roster-row [class*="UserInfo_userName_"] > [class*="UserInfo_tooltip_trigger_"],
+.unicum-roster-row [data-bind-value*=".hiddenUserName"] {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+.unicum-roster-row [class*="UserInfo_clanTag_"] { flex: 0 1 auto !important; max-width: 30%; margin-left: 3rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.unicum-roster-row [class*="UserInfo_userName_"] > [class*="UserInfo_tooltip_trigger_"],
+.unicum-roster-row [data-bind-value*=".hiddenUserName"],
+.unicum-roster-row [class*="UserInfo_clanTag_"],
+.unicum-roster-row [class*="Player_vehicleName_"] {
+    color: #f2f3f5 !important;
+    font-size: 13rem;
+    text-shadow: 0 1rem 1rem #000, 1rem 0 1rem #000;
+}
+.unicum-roster-row [class*="Player_platoon_wrapper_"] { order: 0; width: 30rem !important; margin: 0 !important; }
+.unicum-roster-stats { display: flex; flex: 0 0 128rem; width: 128rem; margin: 0 2rem; color: #fff; font-size: 13rem; font-weight: 600; white-space: nowrap; text-shadow: 0 1rem 1rem #000; pointer-events: none; }
+.unicum-roster-stats > span { box-sizing: border-box; flex: 0 0 44rem; width: 44rem; text-align: center; }
+.unicum-roster-stats > span:nth-child(2) { flex-basis: 38rem; width: 38rem; }
+.unicum-roster-stats > span:nth-child(3) { flex-basis: 46rem; width: 46rem; }
+.unicum-roster-row .unicum-roster-contour { order: 3; flex: 0 0 116rem; width: 116rem !important; margin: 0 2rem !important; }
+.unicum-roster-row > [class*="Player_vehicleType_"] { order: 4; }
+.unicum-roster-row [class*="Player_vehicleNameWrapper_"] { order: 5; width: 94rem !important; margin: 0 2rem !important; }
+.unicum-roster-row [class*="Player_vehicleName_"] { width: 100% !important; }
+.unicum-roster-row [class*="Player_chatIndicators_"] { order: 6; width: 16rem !important; }
+.unicum-roster-row [class*="Player_kills_"] { order: 7; width: 17rem !important; margin: 0 2rem !important; }
+.unicum-roster-row [class*="Player_playerStatus_"] { order: 8; width: 20rem !important; margin: 0 !important; }
+.unicum-tab-eye { flex: 0 0 12rem; width: 12rem; height: 12rem; margin-left: 4rem; background: url(img://gui/maps/icons/unicum/wnx_unavailable.png) center / contain no-repeat; pointer-events: none; }
+.unicum-roster-average { display: inline-block; margin: 0 8rem; color: #fff; background-position: center; background-size: contain; background-repeat: no-repeat; }
+.unicum-roster-live-host { order: 2; flex: 0 0 52rem; width: 52rem; height: 28rem; }
+.unicum-roster-row .unicum-roster-live-tag { position: relative; left: 0; top: 0; bottom: auto; width: 52rem; z-index: 2; }
+.unicum-roster-live-tag > [class*="PrimitiveTooltip_base_"] { height: 100%; }
+.unicum-roster-row [class*="LiveTag_liveTag_background_"] { display: none !important; }
+.unicum-roster-heading [class*="FullStatsHeader_tank_icon_"] { margin: 0 12rem !important; }
+.unicum-roster-heading [class*="FullStatsHeader_frag_icon_"] { margin: 0 4rem !important; }
+
+.unicum-roster-compact .unicum-roster-row [class*="UserInfo_clanTag_"] { max-width: 15%; }
+.unicum-roster-compact .unicum-roster-row [class*="Player_vehicleNameWrapper_"] { width: 68rem !important; }
+.unicum-roster-compact .unicum-roster-row [class*="UserInfo_user_info_"] { margin: 0 2rem !important; }
+.unicum-roster-compact .unicum-roster-row [class*="UserInfo_badge_"] { margin: 0 2rem !important; }
+.unicum-roster-compact .unicum-roster-stats { flex-basis: 112rem; width: 112rem; font-size: 12rem; }
+.unicum-roster-compact .unicum-roster-stats > span { flex-basis: 40rem; width: 40rem; }
+.unicum-roster-compact .unicum-roster-stats > span:nth-child(2) { flex-basis: 34rem; width: 34rem; }
+.unicum-roster-compact .unicum-roster-stats > span:nth-child(3) { flex-basis: 38rem; width: 38rem; }
+.unicum-roster-row[class*="Player_base__current_"] { outline: 1rem solid #dcb970; }
+.unicum-roster-row[class*="Player_base__current_"] [class*="UserInfo_userName_"] > [class*="UserInfo_tooltip_trigger_"],
+.unicum-roster-row[class*="Player_base__current_"] [data-bind-value*=".hiddenUserName"],
+.unicum-roster-row[class*="Player_base__current_"] [class*="UserInfo_clanTag_"],
+.unicum-roster-row[class*="Player_base__current_"] [class*="Player_vehicleName_"],
+.unicum-roster-row[class*="Player_base__current_"] .unicum-roster-stats { color: #f0b75f !important; }
+.unicum-roster-row[class*="Player_base__current_"][class*="Player_base__colorBlind_"] [class*="UserInfo_userName_"] > [class*="UserInfo_tooltip_trigger_"],
+.unicum-roster-row[class*="Player_base__current_"][class*="Player_base__colorBlind_"] [data-bind-value*=".hiddenUserName"],
+.unicum-roster-row[class*="Player_base__current_"][class*="Player_base__colorBlind_"] [class*="UserInfo_clanTag_"],
+.unicum-roster-row[class*="Player_base__current_"][class*="Player_base__colorBlind_"] [class*="Player_vehicleName_"],
+.unicum-roster-row[class*="Player_base__current_"][class*="Player_base__colorBlind_"] .unicum-roster-stats { color: #fffb29 !important; }
+.unicum-roster-row[class*="Player_base__myPlatoon_"] { border-top: 1rem solid #dcb970; }

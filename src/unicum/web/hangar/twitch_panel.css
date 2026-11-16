@@ -1,0 +1,414 @@
+/* While the panel is being dragged or resized the pointer travels over the
+   hangar's own elements, each of which sets its own cursor: without this the
+   cursor flickers between ours and theirs all the way. Setting it on the body
+   alone is not enough -- an element's own rule wins over an inherited one --
+   so it is forced on everything for as long as the drag lasts. */
+body.UnicumPanelDragging, body.UnicumPanelDragging * {
+    cursor: grabbing !important;
+}
+
+body.UnicumPanelResizing, body.UnicumPanelResizing * {
+    cursor: move !important;
+}
+
+/* The garage's Twitch chat panel (twitch_panel.js). Sizes in rem, which the
+   hangar scales with the interface. On the right, under the hangar's mission
+   widgets and the unicum.gg account card, and drawn like them.
+
+   "Drawn like them" was a dark fill and a faint border written here, which is
+   not what a hangar card is: a card paints no fill at all, and what draws it is
+   a border-image of the ui_kit's noise at opacity .25. So the panel borrows
+   that layer by class, as the account card does (account_card.css has the
+   client's own rules and where they are read from). No hover class comes with
+   it: the hangar lights a card up because a card opens something, and this
+   panel is not a button.
+
+   Gameface lays spans and inline-blocks out one under the other, so a line is
+   a row of flex items: badges and name at their own size, then the text,
+   which takes the rest of the row and wraps inside it. */
+
+.UnicumTwitchPanel {
+    position: absolute;
+    /* Where the panel sits and how wide it is when the player has dragged
+       neither: twitch_panel.js replaces both with the hangar's own mission
+       column once it has measured it, which is the column this panel hangs
+       under. These stay for a hangar that shows no mission at all. */
+    right: 46rem;
+    top: 890rem;
+    width: 322rem;
+    height: 220rem;
+    display: flex;
+    flex-direction: column;
+    /* No fill, as a card has none. The border stays declared at its full width
+       and transparent: it holds the box, and the list's 144rem below counts on
+       it, so colouring it in the fallback moves nothing. */
+    border: 1rem solid rgba(255, 255, 255, 0);
+    font-family: PFDINMax, sans-serif;
+    font-size: 14rem;
+    color: #e6e2d8;
+    pointer-events: auto;
+    /* The chat lines only. The 14rem above dresses the whole panel,
+       its header, its input and its buttons, and the player asked for
+       bigger chat, not a bigger panel. */
+    --chat-text: 14rem;
+}
+
+/* The steps of the text size setting, as twitch_panel.js composes them.
+   `normal` adds no class and leaves the 14rem above standing, so a panel
+   whose player never touched this is the sheet it always was. One class
+   deep each, like the rule they override, so their place in the file is
+   what makes them win. */
+.UnicumTwitchPanel__text_small {
+    --chat-text: 12rem;
+}
+
+.UnicumTwitchPanel__text_large {
+    --chat-text: 16rem;
+}
+
+.UnicumTwitchPanel__text_larger {
+    --chat-text: 18rem;
+}
+
+/* The hangar's noise layer, put here by twitch_panel.js. Its own class styles
+   it inset 0, which inside this panel's 1rem border would draw the line a rem
+   in and leave the edge bare; the client's own widgets answer that the same
+   way, pinning their noise at -1rem (IntroOverlay_borderNoise,
+   Banner_borderNoise). It takes no pointer: the panel is dragged, resized and
+   scrolled, and a sheet over all of it would swallow every one of those. */
+.UnicumTwitchPanel > [class*="Card_borderHelper_"] {
+    top: -1rem;
+    right: -1rem;
+    bottom: -1rem;
+    left: -1rem;
+    /* No opacity here, deliberately. A mission card's edge at rest is this one
+       layer and nothing else: the Card_border_ layer beside it is
+       rgba(255, 255, 255, 0) until the pointer arrives, and the white veil is
+       at 0. So the card's border IS this noise at whatever strength the client
+       gives it, and the only way for the panel to wear the same border as the
+       card is to write no strength of its own and take the client's. A value
+       copied here, however carefully chosen, is a value that drifts away from
+       the card the day a client build changes theirs.
+
+       The one override left is the pinning. The card declares no border and
+       lets this layer sit at its inset 0; the panel declares its own 1rem
+       border because its box arithmetic hangs off it (see the list below), and
+       an absolutely positioned child is offset from the padding box, which is
+       inside that border. At -1rem the band lands back on the panel's outer
+       edge, so it is the same ring in the same place as the card's. */
+    pointer-events: none;
+}
+
+/* Over the borrowed layer, which the client gives z-index 1. */
+.UnicumTwitchPanel_header,
+.UnicumTwitchPanel_cardConnect,
+.UnicumTwitchPanel_list,
+.UnicumTwitchPanel_footer,
+.UnicumTwitchPanel_grip {
+    position: relative;
+    z-index: 2;
+}
+
+/* The fallback, for a panel with no hangar card to borrow from: the Twitch
+   window of the battle queue, which is a window of the client's own and holds
+   no mission card, and a hangar showing no missions. Both keep the panel as it
+   looked before it borrowed anything, because a chat with neither fill nor
+   edge is a chat nobody can read. */
+.UnicumTwitchPanel__plain {
+    background-color: rgba(23, 23, 23, 0.2);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* The edge the window draws for itself, grafted by twitch_panel.js, which
+   also gives it the texture. The window shows no fill for the same reason the
+   garage panel shows none: this liseré is what delimits it.
+
+   Every value here is the client's, copied from the rule the garage panel
+   borrows instead (`.Card_82475c .Card_borderHelper_<hash>` in the hangar's
+   main.css): a 1rem transparent border carrying the ui_kit's card noise
+   sliced at 1 and repeated, at a quarter opacity, over the content at
+   z-index 1. This is the one place the values have to be written down rather
+   than taken, because the rule holding them is not in this document:
+   TwitchWindow.html links no stylesheet, so there is nothing to inherit and
+   no class to borrow. Pinned at -1rem for the reason given above.
+
+   Only the texture's outer one-pixel ring ships (panel_icons/card_noise.png,
+   from gui-part2.pkg gui/maps/icons/ui_kit/card/noise_center.png), since a
+   slice of 1 samples nothing else: 2 KB carried rather than 66. */
+.UnicumTwitchPanel_noise {
+    position: absolute;
+    top: -1rem;
+    right: -1rem;
+    bottom: -1rem;
+    left: -1rem;
+    border: 1rem solid transparent;
+    opacity: 0.25;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.UnicumTwitchPanel__collapsed {
+    height: 34rem;
+}
+
+/* Folded, the header's rule would draw a second line on the panel's border. */
+.UnicumTwitchPanel__collapsed .UnicumTwitchPanel_header {
+    border-bottom: none;
+}
+
+.UnicumTwitchPanel__collapsed .UnicumTwitchPanel_list,
+.UnicumTwitchPanel__collapsed .UnicumTwitchPanel_footer {
+    display: none;
+}
+
+.UnicumTwitchPanel_header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: 34rem;
+    padding: 0 10rem;
+    border-bottom: 1rem solid rgba(255, 255, 255, 0.08);
+    /* grab and grabbing are what the hangar's own draggable parts use. */
+    cursor: grab;
+}
+
+.UnicumTwitchPanel__dragging .UnicumTwitchPanel_header {
+    cursor: grabbing;
+}
+
+.UnicumTwitchPanel_logo {
+    width: 18rem;
+    height: 18rem;
+    margin-right: 8rem;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.UnicumTwitchPanel_heading {
+    flex: 1 1 0;
+    min-width: 0;
+    white-space: normal;
+}
+
+.UnicumTwitchPanel_title {
+    font-size: 15rem;
+    line-height: 18rem;
+    color: #e9e4d6;
+}
+
+.UnicumTwitchPanel_subtitle,
+.UnicumTwitchPanel_cardConnect {
+    display: none;
+}
+
+/* No channel: a card as tall as the account card's, with its own Connect. */
+/* Taller when a longer text wraps, as the account card. */
+.UnicumTwitchPanel__compact {
+    height: auto;
+    min-height: 52rem;
+}
+
+.UnicumTwitchPanel__compact .UnicumTwitchPanel_header {
+    height: auto;
+    align-items: flex-start;
+    padding: 9rem 10rem 0;
+    border-bottom: none;
+}
+
+.UnicumTwitchPanel__compact .UnicumTwitchPanel_title {
+    font-size: 16rem;
+    line-height: 20rem;
+}
+
+.UnicumTwitchPanel__compact .UnicumTwitchPanel_reset,
+.UnicumTwitchPanel__compact .UnicumTwitchPanel_close {
+    margin-top: 4rem;
+}
+
+.UnicumTwitchPanel__compact .UnicumTwitchPanel_logo {
+    width: 22rem;
+    height: 22rem;
+    margin: 2rem 10rem 0 0;
+}
+
+.UnicumTwitchPanel__compact .UnicumTwitchPanel_subtitle {
+    display: block;
+    font-size: 14rem;
+    line-height: 18rem;
+    color: #9a968c;
+}
+
+.UnicumTwitchPanel__compact .UnicumTwitchPanel_cardConnect {
+    display: block;
+    flex-shrink: 0;
+    height: 26rem;
+    line-height: 26rem;
+    margin: 10rem 10rem 9rem;
+    text-align: center;
+    /* The site's buttons: rounded, 8px at this height. */
+    border-radius: 8rem;
+    background-color: rgba(145, 70, 255, 0.85);
+    color: #ffffff;
+    font-size: 13rem;
+    cursor: pointer;
+}
+
+.UnicumTwitchPanel__compact .UnicumTwitchPanel_toggle,
+.UnicumTwitchPanel__compact .UnicumTwitchPanel_list,
+.UnicumTwitchPanel__compact .UnicumTwitchPanel_footer {
+    display: none;
+}
+
+/* The header's buttons: icons of one set, one size, in the hangar's off-white,
+   at the 0.9 its text and icons are drawn with, full on hover. */
+.UnicumTwitchPanel_reset,
+.UnicumTwitchPanel_toggle,
+.UnicumTwitchPanel_close {
+    opacity: 0.9;
+    flex-shrink: 0;
+    width: 14rem;
+    height: 14rem;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer;
+}
+
+.UnicumTwitchPanel_reset,
+.UnicumTwitchPanel_toggle {
+    margin-right: 12rem;
+}
+
+/* A height of its own rather than the rest of the panel: Gameface sizes a flex
+   item by its content whatever min-height says, so messages that outgrew the
+   list pushed the field out of the panel. 144 = 220 - the header's 34 - the
+   footer's 40 - the panel's two 1rem borders. */
+.UnicumTwitchPanel_list {
+    flex-shrink: 0;
+    height: 144rem;
+    overflow: hidden;
+    padding: 6rem 10rem;
+}
+
+/* The corner that resizes the panel: two short rules, as the game's own
+   resizable windows draw theirs. Hidden folded or without a chat, where the
+   panel has no size of its own to speak of. */
+.UnicumTwitchPanel_grip {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 14rem;
+    height: 14rem;
+    /* The client draws the cursor itself and knows nothing of the resize ones:
+       its whole interface uses only pointer, default, auto, initial, grab,
+       grabbing, text, all-scroll, move, inherit and none. move is the closest
+       to "drag this corner"; anything else falls back to the plain arrow. */
+    cursor: move;
+    /* Stops written one by one: the two-position shorthand is newer than what
+       Gameface parses. */
+    background-image: linear-gradient(135deg,
+        rgba(255, 255, 255, 0) 55%, rgba(255, 255, 255, 0.3) 55%, rgba(255, 255, 255, 0.3) 66%,
+        rgba(255, 255, 255, 0) 66%, rgba(255, 255, 255, 0) 77%, rgba(255, 255, 255, 0.3) 77%,
+        rgba(255, 255, 255, 0.3) 88%, rgba(255, 255, 255, 0) 88%);
+}
+
+.UnicumTwitchPanel__collapsed .UnicumTwitchPanel_grip,
+.UnicumTwitchPanel__compact .UnicumTwitchPanel_grip {
+    display: none;
+}
+
+/* The empty chat, centred in the list: the list's 144 less its padding. */
+.UnicumTwitchPanel_empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 132rem;
+    padding: 0 12rem;
+    text-align: center;
+}
+
+.UnicumTwitchPanel_emptyTitle {
+    font-size: 14rem;
+    line-height: 18rem;
+    color: #b8b4aa;
+}
+
+.UnicumTwitchPanel_emptyText {
+    margin-top: 4rem;
+    font-size: 12rem;
+    line-height: 16rem;
+    color: #85817a;
+    white-space: normal;
+}
+
+.UnicumTwitchPanel_line {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 3rem 0;
+    line-height: calc(var(--chat-text) + 4rem);
+}
+
+.UnicumTwitchPanel_badge {
+    flex-shrink: 0;
+    width: calc(var(--chat-text) + 2rem);
+    height: calc(var(--chat-text) + 2rem);
+    margin: 1rem 3rem 0 0;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.UnicumTwitchPanel_name {
+    flex-shrink: 0;
+    font-weight: bold;
+    font-size: var(--chat-text);
+    color: #c8c8c8;
+}
+
+.UnicumTwitchPanel_text {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-left: 4rem;
+    font-size: var(--chat-text);
+    color: #e6e2d8;
+}
+
+.UnicumTwitchPanel_footer {
+    flex-shrink: 0;
+    height: 40rem;
+    padding: 6rem 10rem;
+}
+
+/* Gameface draws an input's text at the top of its box. A line as tall as
+   the box centres it, but the caret is as tall as the line, so the line stays
+   a line and padding centres it. The height counts padding and borders:
+   28 = 18 + 4 + 4 + two 1rem borders. */
+.UnicumTwitchPanel_input {
+    width: 100%;
+    height: 28rem;
+    line-height: 18rem;
+    padding: 4rem 8rem;
+    background-color: rgba(0, 0, 0, 0.45);
+    border: 1rem solid rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    font-size: 14rem;
+}
+
+.UnicumTwitchPanel_connect {
+    height: 28rem;
+    line-height: 28rem;
+    text-align: center;
+    border-radius: 8rem;
+    background-color: rgba(145, 70, 255, 0.55);
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.UnicumTwitchPanel_reset:hover,
+.UnicumTwitchPanel_toggle:hover,
+.UnicumTwitchPanel_close:hover {
+    opacity: 1;
+}

@@ -1,0 +1,276 @@
+"""Every word the settings page shows, and the choices behind them.
+
+Data, with one exception. Kept apart because this is the file somebody opens
+to change what a setting is called, and nothing here decides anything: no
+client, no state, no behaviour, so a wording change cannot break a page.
+
+The exception is `linked_notice`, which three modules call to say an account
+was linked. It was private and reached into from outside, which is what #3
+calls the sign that this was more than a size problem, so it has a public
+name and a home now.
+"""
+from __future__ import absolute_import
+
+import logging
+
+_logger = logging.getLogger('unicum.settings_window.labels')
+
+LINKAGE = 'gg.unicum'
+
+_WINDOW_LABELS = {'recent': 'Last 30 days', 'total': 'Overall'}
+
+# The plain figures beside a rating, in the order of EXTRAS. Overall rather
+# than the rating's own period by default: "how many battles has this player"
+# is a question about a career, not about this month.
+_EXTRA_LABELS = {'off': 'Off', 'total': 'Overall', 'recent': 'Last 30 days'}
+_MODE_LABELS = {
+    'random': 'Random battles',
+    'ranked': 'Ranked battles',
+    'onslaught': 'Onslaught',
+    'stronghold': 'Stronghold',
+    'frontline': 'Frontline',
+    'training': 'Training rooms',
+    'other': 'Other modes',
+}
+# The API has two columns and no sections, one control a line. So the page is
+# the game's two places: the garage in the first column, the battle in the
+# second, each holding everything that happens there. Every line reads the
+# same way: where, then a dropdown among the same options as its neighbours,
+# all of one width. Not a radio button group: CHAMPi's window draws one as a
+# row of buttons, but Aslain's Mod Menu as a column of radio buttons, four
+# lines a choice.
+_SPACER = 12
+
+# Wide enough for the longest option, "Ratings and flags".
+_CHOICE_WIDTH = 200
+
+# (label, rating, flags): what a screen shows. A team or detachment average
+# goes with the ratings, being one.
+SHOW_CHOICES = (
+    ('Ratings and flags', True, True),
+    ('Ratings only', True, False),
+    ('Flags only', False, True),
+    ('Nothing', False, False),
+)
+
+# (label, allies, enemies): whose stats a battle mode shows.
+TEAM_CHOICES = (
+    ('Both teams', True, True),
+    ('Allies only', True, False),
+    ('Enemies only', False, True),
+    ('Nobody', False, False),
+)
+
+# When a screen shows them: at once, or while the extended info key is held.
+WHEN_CHOICES = ('Always', 'While Alt is held')
+
+# Which reloads are announced, in the order of RELOAD_CHOICES.
+RELOAD_LABELS = ('Never', 'Every gun', 'Autoloaders only')
+
+# What the minimap writes beside a vehicle. "Vehicle" is the client untouched.
+MINIMAP_NAME_LABELS = ('Vehicle', 'Player', 'Vehicle and player')
+
+# Where the Twitch chat shows in battle, in the order of BATTLE_CHAT_CHOICES.
+# "In a window" is the chat window of the queue screen, kept up over the
+# battle; "In both" shows every message twice, which some players want.
+BATTLE_CHAT_LABELS = ('Off', 'In the battle chat', 'In a window', 'In both')
+
+# The chat's text size, in the order of TEXT_SIZE_CHOICES. The same four
+# steps for both renderers, so a player sets one list the way they set the
+# other.
+TEXT_SIZE_LABELS = ('Small', 'Normal', 'Large', 'Larger')
+
+# What a row is about, in the order of FIGURE_CHOICES. "On the tank" rather
+# than "Per vehicle": the row is about a player, and what changes is which of
+# their battles are counted.
+FIGURE_LABELS = ('Career', 'On the tank', 'Both')
+
+FIGURES_LABEL = 'Figures shown'
+
+COLOR_NAMES_LABEL = 'Color player names by WNX'
+COLOR_CLAN_TAGS_LABEL = 'Color clan tags by WNX'
+COLOR_VEHICLES_LABEL = 'Color vehicle names by WNX'
+SHOW_WNX_BADGES_LABEL = 'Show WNX badges'
+
+_COLOR_NAMES_TOOLTIP = (
+    '{HEADER}' + COLOR_NAMES_LABEL + '{/HEADER}{BODY}Colours player names in the Tab table, the players '
+    'list and the battle loading table with unicum.gg\'s WNX scale. If a player has no WNX, the game\'s '
+    'own text colour is left alone.{/BODY}')
+_COLOR_CLAN_TAGS_TOOLTIP = (
+    '{HEADER}' + COLOR_CLAN_TAGS_LABEL + '{/HEADER}{BODY}Colours a visible clan tag with the same WNX '
+    'colour as its player. The clan tag is part of the player-name field in some Scaleform rows, so there '
+    'it is styled within that field.{/BODY}')
+_COLOR_VEHICLES_TOOLTIP = (
+    '{HEADER}' + COLOR_VEHICLES_LABEL + '{/HEADER}{BODY}Colours the vehicle name in the same WNX colour '
+    'as its player. The vehicle icons and other row elements are left alone.{/BODY}')
+_SHOW_WNX_BADGES_TOOLTIP = (
+    '{HEADER}' + SHOW_WNX_BADGES_LABEL + '{/HEADER}{BODY}Shows the old per-player WNX rating blocks beside '
+    'battle rows. Off by default; the Tab table shows WNX, win rate and battles as text instead.{/BODY}')
+
+# The same choice in the Garage column, which holds five surfaces at once, so
+# it says which one it is about. Worded like the Alt lines beside it.
+RESULTS_FIGURES_LABEL = 'Battle results: figures'
+
+_RESULTS_FIGURES_TOOLTIP = (
+    '{HEADER}Battle results: figures{/HEADER}{BODY}Which battles the numbers on a row count, '
+    'on the post-battle results screen. Career is every tank that player owns. On the tank is '
+    'the record of the one they brought to this battle, in the mode it was played, with the '
+    'number of battles they have in it beside the figure. Both draws them side by side, which '
+    'this screen has room for.\n\n'
+    'The mode is read from the battle itself, so an old result opened from the notifications '
+    'is counted as the mode it was, not the mode you are playing now. Outside random battles '
+    'there is no WN rating per vehicle, so a skirmish or a stronghold shows a win rate '
+    'instead.{/BODY}')
+
+_FIGURES_TOOLTIP = (
+    '{HEADER}Figures shown{/HEADER}{BODY}Which battles the numbers on a row count. '
+    'Career is every tank that player owns, which is what the rest of the mod shows. '
+    'On the tank is the record of the one they brought, in the mode being played, with '
+    'the number of battles they have in it beside the figure, since four battles and four '
+    'hundred do not read the same. Both shows the career and puts the tank under Alt. '
+    'Outside random battles there is no WN rating per vehicle to show: Wargaming computes '
+    'the expected values those scales need on random battles alone, so a skirmish or a '
+    'stronghold shows a win rate instead. A tank the site holds nothing about falls back '
+    'to the career figure, drawn in grey to say so.{/BODY}')
+
+_SURFACE_LABELS = {
+    'contacts': 'Contacts list',
+    'profile': 'Profile',
+    'skirmishRoom': 'Skirmish room',
+    'stronghold': 'Stronghold',
+    'battleResults': 'Battle results',
+    'battle': 'In battle',
+}
+_GARAGE_SURFACES = ('contacts', 'profile', 'skirmishRoom', 'stronghold', 'battleResults')
+
+# The battle's screens that can wait for Alt, and the altOnly key of each.
+_ALT_SCREENS = (('markers', 'Above tanks'), ('panel', 'Players list'), ('tab', 'Tab screen'),
+                ('loading', 'Loading screen'), ('minimap', 'Minimap'))
+_ALT_KEYS = ('markers', 'panel', 'tab', 'loading', 'results', 'skirmishRoom', 'stronghold',
+             'minimap')
+
+# The two right-click switches, kept apart because they are wanted apart: the
+# tank menus reach the tech tree and the shop, where a player menu never goes.
+_MENU_KEYS = ('players', 'vehicles')
+
+# Nor any rule, so a heading draws its own with em dashes: box-drawing
+# characters are missing from the window's font and drew nothing.
+_RULE = u'\u2014' * 16
+
+# The line carrying a button: the Twitch section's Connect. Linking the account
+# alone is the garage's account card (account_card.js).
+CONNECT_VAR = 'twitchConnect'
+
+_CONNECT_TOOLTIP = ('{HEADER}Twitch{/HEADER}{BODY}The channel is the one linked to your unicum.gg account. '
+                    'Connect links this game to that account and your Twitch channel, in your browser: nothing '
+                    'to type, you only confirm. Then the battle chat has a TO TWITCH receiver, and the garage '
+                    'panel a field to write in your chat.{/BODY}')
+
+# The button opening the site's support page in the player's browser. Not a
+# setting: nothing is stored, the click only opens the page.
+SUPPORT_VAR = 'support'
+
+DISCORD_VAR = 'discord'
+
+SOURCE_VAR = 'source'
+
+DISCORD_URL = 'https://discord.gg/Hqbfb8YPbU'
+
+SOURCE_URL = 'https://github.com/unicum-gg/unicum.gg-mod'
+
+# Each line of the unicum.gg section: the variable, what it says, and the
+# button's own word. Order matters, it is the order they are drawn in.
+LINKS = (
+    (SUPPORT_VAR, 'unicum.gg is free and has no ads', 'Support'),
+    (DISCORD_VAR, 'Questions, ideas and bug reports', 'Discord'),
+    (SOURCE_VAR, "The mod's source and its issues", 'GitHub'),
+)
+
+_LINK_TOOLTIPS = {
+    SUPPORT_VAR: ('{HEADER}Support unicum.gg{/HEADER}{BODY}The site and this mod are free, with no ads and '
+                  'nothing held back for payers. Opens the support page in your browser, where you choose '
+                  'what you give, if anything.{/BODY}'),
+    DISCORD_VAR: ('{HEADER}Discord{/HEADER}{BODY}The unicum.gg server, where the mod is talked about: ask a '
+                  'question, say what is missing, or report what went wrong. Opens in your browser.{/BODY}'),
+    SOURCE_VAR: ('{HEADER}GitHub{/HEADER}{BODY}Everything this mod does is written down and open to read. '
+                 'Opens the repository in your browser, where issues are filed too.{/BODY}'),
+}
+
+# The button putting every setting back to what it was before anything was
+# changed. Not a setting either: the click acts, nothing is stored.
+RESET_VAR = 'resetDefaults'
+
+RESET_LABEL = 'Every setting back to its default'
+
+RESET_BUTTON = 'Reset'
+
+_RESET_TOOLTIP = ('{HEADER}Reset{/HEADER}{BODY}Puts every setting of this mod back to what it was when it '
+                  'was installed, at once, in this window and in the mods list alike. Nothing else is '
+                  'touched: the account this game is linked to stays linked.{/BODY}')
+
+# The account card's checkbox. Not a settings.json value: the card's own cross
+# hides it for the Wargaming account logged in, in account.json, and this box
+# is the way back, which the cross alone never offered.
+CARD_VAR = 'accountCard'
+
+# Labels the garage's notices send the player looking for, so a notice and the
+# window cannot name the same box differently. The Twitch panel's notice once
+# pointed at "Twitch chat in the garage", a box that never existed.
+CARD_LABEL = 'unicum.gg account card'
+GARAGE_CHAT_LABEL = 'Chat panel in the garage'
+BATTLE_CHAT_LABEL = 'Twitch chat in battle'
+# Named after what draws the chat rather than where the player is: the
+# panel is the same panel in the garage and in the window over a battle.
+PANEL_TEXT_LABEL = 'Chat text size in the panel'
+BATTLE_TEXT_LABEL = 'Chat text size in the battle chat'
+
+# Not a settings.json value either: the site owns this row, and the box is
+# only drawn for the accounts allowed to move it.
+HIDE_VAR = 'hideLoadouts'
+HIDE_LABEL = 'Hide my loadouts from my page'
+
+# Not a settings.json value either, for the same reason as the loadouts box:
+# the site owns this row. Drawn for every linked account, supporter or not,
+# since a player whose team practice would be readable by whoever they face
+# next should not have to pay to keep it quiet.
+#
+# This is the only battle switch there is. The battles themselves are always
+# sent while the mod is installed (see the defaults), so the words must not suggest
+# that ticking this stops anything: it hides the list, nothing more.
+HIDE_BATTLES_VAR = 'hideBattles'
+HIDE_BATTLES_LABEL = 'Hide my battles from my page'
+HIDE_BATTLES_TOOLTIP = (
+    '{HEADER}' + HIDE_BATTLES_LABEL + '{/HEADER}{BODY}Only you see the Battles tab of your unicum.gg '
+    'page. Your battles are still sent, as they are whenever this mod is installed, turned off '
+    'included, and still count in the site\'s statistics; the players you met still see you among '
+    'their encounters.{/BODY}')
+
+REPLAYS_LABEL = 'Share the replay file too'
+REPLAYS_TOOLTIP = (
+    '{HEADER}' + REPLAYS_LABEL + '{/HEADER}{BODY}Sends the .wotreplay your client already writes '
+    'for each battle, on top of the result. It carries everything your client saw, the battle chat '
+    'included, which the result does not: so it shares what the other twenty-nine typed as well as '
+    'what you typed. It is kept for a 3D view of a battle, which needs shell paths and hit geometry '
+    'that cannot be collected after the fact. Your client keeps only the last battle unless you '
+    'changed that, so this takes a copy before the next one overwrites it. Untick it to stop '
+    'sending; files already sent stay.{/BODY}')
+
+MEASURE_LABEL = 'Measure what this mod costs'
+
+_MODES_TOOLTIP = ('{HEADER}Whose stats, per mode{/HEADER}{BODY}Enemies only or Nobody keep the other team\'s '
+                  'ratings and flags out of a mode, ranked battles for instance. It applies in the players list, '
+                  'loading screen and above tanks. The Tab table shows WNX and no flags.{/BODY}')
+
+_TAB_TOOLTIP = ('{HEADER}Tab screen{/HEADER}{BODY}In random battles, the Tab table colours the player name, '
+                'clan tag and vehicle name with the same Unicum.gg WNX colour. Where available, battles, WNX '
+                'and win rate follow the vehicle name in that order. Flags are not shown.{/BODY}')
+
+def linked_notice(name, twitch):
+    """Tell the player, in the garage notifications, how linking ended."""
+    from gui import SystemMessages
+    if name is None:
+        SystemMessages.pushMessage('unicum.gg: the game could not be linked. Try Connect again.',
+                                   type=SystemMessages.SM_TYPE.Warning)
+    else:
+        SystemMessages.pushMessage('unicum.gg: linked to %s. Start a battle chat message with !t to write '
+                                   'in your Twitch chat.' % name, type=SystemMessages.SM_TYPE.Information)

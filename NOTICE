@@ -1,0 +1,32 @@
+Unicum WNX UI
+Derivative preparation date: 2026-11-16
+
+Based on unicum-gg/unicum.gg-mod:
+https://github.com/unicum-gg/unicum.gg-mod
+Original supplied source snapshot: version 0.9.0, as stated in its CHANGELOG.md.
+Original copyright: Copyright (C) 2026 Antoine Kingue <contact@antoinek.fr>
+The original LICENSE is retained verbatim, including its copyright notice.
+No exact upstream Git commit was supplied in the archive; none is invented.
+
+Local modifications through 0.9.15 redesign battle rosters, loading and Tab
+statistics, Alt behavior, native Live Tags and overhead WNX accents. The
+snapshot delta is recorded in docs/UPSTREAM_DELTA.json. Initial publication
+preparation on 2026-11-16 adds derivative documentation, relocatable checks,
+license packaging and CI that never publishes releases automatically.
+
+The code remains licensed under GNU AGPL version 3. Preserve existing notices
+and supply matching Corresponding Source to binary recipients as required by
+that license. Before public binary distribution, arrange accessible matching
+source; a private repository link alone is insufficient for recipients who
+cannot access it. No public release is authorized by this source import.
+
+Third-party components retain their licenses; see THIRD_PARTY_NOTICES.md,
+licenses/, and vendor/openwg/LICENSE-gameface. Unicum.gg, Wargaming, World of
+Tanks and third-party brands belong to their respective owners. This project
+is not affiliated with or endorsed by them. The upstream brand assets are
+retained for existing integrations; no trademark permission is implied.
+
+Wargaming client SWCs and the original markers movie are external build inputs,
+not repository source under the AGPL. A generated patched client movie is not
+an assertion of ownership over Wargaming code. Review applicable client/mod
+distribution terms before distributing client-derived binaries.

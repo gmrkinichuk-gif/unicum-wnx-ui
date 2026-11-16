@@ -1,0 +1,33 @@
+# Release procedure
+
+No release is published automatically. The initial import creates only a Git
+commit. There are no tag-triggered publishers, scheduled release PRs or calls
+to the upstream wgmods service. Removed upstream tools targeted its repository
+or mod-hub ID and must not be reused for this derivative without adaptation.
+
+1. Keep the mod version at the latest accepted CHANGELOG version (currently
+   0.9.15); bump it only for a deliberately versioned change.
+2. Build from a matching installed EU client with README's commands, or run
+   the manual `candidate` workflow with the current version. It reads the live
+   client through the inherited client-files action. A candidate is an Actions
+   artifact, never a Release. Record the client manifest and SHA-256 digests.
+3. Run selftest, release_check and UI checks. Review any skipped API checks.
+4. Test the candidate in WoT: both teams, panel modes, loading, Tab, native
+   Live Tags and tooltips, Alt changes, own/dead/hidden players, missing and
+   late ratings, overhead markers and the installed modpack.
+5. Obtain explicit maintainer confirmation of in-game functionality and a
+   separate publication decision. Check the source and license obligations
+   for the patched client movie and all bundled components.
+6. Only then create a tag and GitHub Release manually, attach the verified ZIP,
+   `.wotmod`, manifest and checksums, and provide matching Corresponding Source
+   to every recipient. Do not replace verified assets with mirror-built output.
+
+The private repository remains private. Before distributing outside its
+authorized collaborators, arrange source access for recipients in compliance
+with the AGPL; repository privacy must not be changed as a side effect.
+
+The CI `build` workflow uses mirrored client files solely as a compiler and
+packaging regression check. Its temporary game version is a CI sentinel, not
+a supported client or mod version. No CI package from that workflow is uploaded.
+The candidate workflow uses the actual CHANGELOG version and live client files.
+Both workflows use read-only repository permissions.

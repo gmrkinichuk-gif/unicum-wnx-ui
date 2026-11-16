@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-16",
+  "mod_version": "0.9.15",
+  "game_mods_version": "2.4.1.1",
+  "staged_files": 241,
+  "gitleaks": {
+    "version": "8.30.1",
+    "index_export_findings": 0,
+    "extracted_vendor_findings": 0,
+    "redacted": true
+  },
+  "workflow_validation": "actionlint 1.7.12 passed",
+  "diff_check": "passed; original Apache NOTICE whitespace preserved using a scoped attribute",
+  "secret_review": "no live credentials found; public cache-key false positives resolved before final scan",
+  "license": "upstream AGPL v3 and dependency notices retained",
+  "selftest_assertions": 873,
+  "release_check_assertions": 23,
+  "panel_flip_fixture_assertions": 24636,
+  "browser_widths": [
+    1280,
+    1366,
+    1920,
+    2560
+  ],
+  "in_game_tested": false,
+  "public_release_created": false,
+  "repository_visibility": "private"
+}

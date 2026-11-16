@@ -1,0 +1,316 @@
+{
+  "baseline_version": "0.9.0",
+  "local_version": "0.9.15",
+  "date": "2026-11-16",
+  "upstream_commit": null,
+  "hash_format": "SHA-256; LF-normalized text, exact binaries",
+  "excludes": [
+    "docs/UPSTREAM_DELTA.json",
+    "docs/PUBLICATION_CHECK.json"
+  ],
+  "changed": [
+    {
+      "path": ".github/workflows/build.yml",
+      "sha256": "1889fd872831eaa50c182d70dd8907193882ce04bca2c4c4d07ec731c01e93b4",
+      "baseline_sha256": "f9c52bf40ff002f4026ecae8ddc9658590217c712fb4067cf7c538648dd4d25c"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "8c340793d80c8ddd372b9f1543d9fee753a5956bb842cbee688fb2882d46ce0e",
+      "baseline_sha256": "6aae96511a8a038a181f1aa433bf8f3fd9d90998d963fd53364c21fe0533c450"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "a9e8a2860d6924327b9e99f80e8f6135f43c9dff52c9f1e0ac727f9e87785231",
+      "baseline_sha256": "71cd6d297e5da7092b7b1df67651f3dbb4fa1e81d91ec0715a8984ac774d0296"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "f25b9874207ff2702c360f8adb9c94fabc5eb92d0cc72a311b1efd272767585f",
+      "baseline_sha256": "db5a9ed76ea81a84073c1def86bd1fa4e0a9003a21134929a2613b9a97d95640"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "sha256": "c4905fe54fc3f0710beb43f7c94200a3067175498830d4fc426630029553e61f",
+      "baseline_sha256": "417f7195f3728f0e00625679c7d5dd0b51def1a26e63fc5aa8ff37a4ae332724"
+    },
+    {
+      "path": "README.md",
+      "sha256": "62007f7e280e44ac39d5933cb63a6135126b1a68a00654501c0dee2e5cbba792",
+      "baseline_sha256": "a2c50cc6b2d1beb370a729f139c177ed011641f748632b7f1656048163b5edbe"
+    },
+    {
+      "path": "as3/build-config.xml",
+      "sha256": "7a567f466863f11b2e1617ab02d8b89ee986a322d01eae031331558219dc5dfc",
+      "baseline_sha256": "959d2001c2b1771332c33343be70627af561d723fc827523273e77230654ac48"
+    },
+    {
+      "path": "as3/src/unicum/NameMarkerView.as",
+      "sha256": "37c480646b29bbd2a458dda6f076df0389998a19f105fd64a789eda66e621e36",
+      "baseline_sha256": "41dd51a92d57d78f3b09f3739bd84b7e009527bb84a9fd6e41467be4865f027e"
+    },
+    {
+      "path": "as3/src/unicum/TeamNamesHtml.as",
+      "sha256": "f2245fad92ba79b84948cb9fb83ed32dbd15602c1d769c81be04e881cc8126e6",
+      "baseline_sha256": "67a493652784b6348577880d09215094c48d0db39d598a4262fdbfbe7e129db0"
+    },
+    {
+      "path": "as3/src/unicum/VehicleMarkers.as",
+      "sha256": "b216c3c400149cce1bfab4732696f4fa2f50a40957cf90451c934a7a6866ee89",
+      "baseline_sha256": "ca77133ffd4548269288f61708cf2da697d6f18a12c6be07702c54422986913b"
+    },
+    {
+      "path": "as3/src/unicum/markers/NameMarkerAddon.as",
+      "sha256": "de7dd3253393c1c5850885f12015cfdcc2747c353d13fab6ec0c9a06a6b3f1d5",
+      "baseline_sha256": "cadbb06dd6d99d60a4c39944497935ccbc52aadc8c03f41c323ab1acd273e86c"
+    },
+    {
+      "path": "src/unicum/badges.py",
+      "sha256": "7bd628647dd14d2ae895c2453f1f2967b21c4f89633cc24800ad63a2af717ce9",
+      "baseline_sha256": "66e0ef1cd79b6413b00ea942d69ce2db8b1fe6a76e6d360861233000cbddd6f7"
+    },
+    {
+      "path": "src/unicum/battle/__init__.py",
+      "sha256": "9301351336b66dcac2743499f19b1d5bbc8f97016a637fc1a374d49a3de27664",
+      "baseline_sha256": "967a8ac3e04de8474de1c3f67085a66de4fe21dd22ccbba38bd4dbb360513b1c"
+    },
+    {
+      "path": "src/unicum/battle/drawing.py",
+      "sha256": "467f3c791675675dc00194d5dbeb780cfa5905b89c67328a4fd569d1643c2278",
+      "baseline_sha256": "65a5544f4787737c4da8375af0e07f8e80d1f5be5ecf971ef0ccc96a11601e78"
+    },
+    {
+      "path": "src/unicum/battle/flags.py",
+      "sha256": "16cf7e63861f3e8e2951f3fa97d127a95b9ad324f08423898beab0417515081b",
+      "baseline_sha256": "23ef9d383678b167a1d8e9f1b7c03702aa83aed7e1fb5119fb63b2aea204a524"
+    },
+    {
+      "path": "src/unicum/extended_info.py",
+      "sha256": "65b288c3074563476e11f2f2645cc8ef8f1fe30428bafa2356fe13f8033a356c",
+      "baseline_sha256": "2ddb8efbc576118fd152393cbd3fa6c29b19bcfadd96b957a3e8b114318e7723"
+    },
+    {
+      "path": "src/unicum/name_markers.py",
+      "sha256": "69b14e9e838f5e89e13e219f3b1cee17bfdea0ffb24109815100ae87de6e723b",
+      "baseline_sha256": "6193b9fc2e49c5b324e9afa2275a847ca0a9c4ceff8325b3137a493f81e8dcd7"
+    },
+    {
+      "path": "src/unicum/settings/defaults.py",
+      "sha256": "0339a67ee3e08d69d4ca6301971605f41e342c4f42aa6fe4c6a4a955f61382f1",
+      "baseline_sha256": "bef8258f54550819f90a20ad40e81bf64c362b49bc3caa0bc32a4c180152b073"
+    },
+    {
+      "path": "src/unicum/settings/validating.py",
+      "sha256": "302c6b6b539f88ce94102a5902093b0b81cbd256f0d15a697bdcb8358ca8ce9d",
+      "baseline_sha256": "bc3bbdfc813c76b08773f738ca962181ded50a05451c2121d74d7597953f368a"
+    },
+    {
+      "path": "src/unicum/settings_window/codec.py",
+      "sha256": "a5173d063c0512db7e7bc5abfd1cae5d16b46227922531cbdf01f9992aee5600",
+      "baseline_sha256": "d049db9ce248ef893ccf7b4a923108c4f057e7e4f24356bef20052e08de41510"
+    },
+    {
+      "path": "src/unicum/settings_window/labels.py",
+      "sha256": "4086cbbb6a86c96d02d333d338685eb05cdbe28cafab87c9db0a7346b7e6b69b",
+      "baseline_sha256": "253da430570f93e362c8e8b15ed13328dd34728790c08926da09ea279c950e7b"
+    },
+    {
+      "path": "src/unicum/settings_window/page.py",
+      "sha256": "8899f596456ed0243974ddaddc2b1384122ad43d07425ee74fcbf2135e8311b0",
+      "baseline_sha256": "9b5a4747e640b5e63962d9c3eb95ed7aac4f1b010bdc14ba4a77fafe13874054"
+    },
+    {
+      "path": "src/unicum/tab_screen.py",
+      "sha256": "28a6eec396f8e3352dc89e0f86ebd29ea1cd98de3463e61273d0dbda3adcb49b",
+      "baseline_sha256": "c7a44c028df2c314e6513522c3722ff4638141d9878dcfe38ab789f294a92ede"
+    },
+    {
+      "path": "src/unicum/web/battle/tab_screen.css",
+      "sha256": "2a7181f7322f6de9328c4d894ca16faa21e63178afd01029c205a1633495d7fa",
+      "baseline_sha256": "0cdf7404a1668888f9a9fcb4b538ad94ecfc08dec022731f04ee68b8d03cd8d0"
+    },
+    {
+      "path": "src/unicum/web/battle/tab_screen.js",
+      "sha256": "bcc71182c2293464f61282460683e86fd7cdd00d97bc5c6fba54666f72c26727",
+      "baseline_sha256": "8a74ec2a2998568c6b494e4ae22a3042752d911a62770cebdfdd62ca130e8848"
+    },
+    {
+      "path": "tools/build_release.py",
+      "sha256": "65c5aa7e15b5cdbf47e3d344ad0301d693c65a7667c0a4ecfc739ea268761447",
+      "baseline_sha256": "1416856dacb156e22547c5decbd17ccb462af974f6d1c6ffbd7743e9a1e92ac0"
+    },
+    {
+      "path": "tools/checks/extras.py",
+      "sha256": "7ff819c54326476cf577a99f0b62f20584dcc399e38040128674aa113cc8f6e3",
+      "baseline_sha256": "df698ae6b9709acdbebacbf3c33e8e131d01526d6a2ef61b2dc9c4ef7ed5da13"
+    },
+    {
+      "path": "tools/checks/settings.py",
+      "sha256": "913fbafe954f8643c5b0a334b3772e4c95184803b567678df19016a903ef98b0",
+      "baseline_sha256": "ef1680e40c13738271ac189dc543256dbfea277f464287422ab414b9010c99c6"
+    },
+    {
+      "path": "tools/release_check.py",
+      "sha256": "251ad9b232298908aab72ecc010c288ac807efc4cca9310ef7c56be7dcb7d070",
+      "baseline_sha256": "a3307eff8d974353ee283190fbe18ec67ba51499484055652535272ad21ff3a6"
+    },
+    {
+      "path": "tools/selftest.py",
+      "sha256": "9387ad853743cb373255b8d455e6bd72d65e913eca0d283a5484e4ca46b828d9",
+      "baseline_sha256": "ea856b1dda2e2744a02868113bce6c6aafcfe4c84bcf206171d97df5ac654b51"
+    }
+  ],
+  "added": [
+    {
+      "path": ".gitattributes",
+      "sha256": "fc0a1ba242097168c7d6eb6c78845e302190547394e3be15db366f8f35845364"
+    },
+    {
+      "path": ".github/workflows/candidate.yml",
+      "sha256": "3e90e53ee0febef7ae74afff232916ad754d472bd23d67ea0162b2c38dd23b24"
+    },
+    {
+      "path": "NOTICE",
+      "sha256": "d0bacd6a2f797afdf4cc3c6baf587f8ca416e10e288f1ab5db3db9905d66d47d"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "sha256": "6e7812d0c022ddae1e79e6f5a448334e51019d75f2bdc9f653d809749fe397a6"
+    },
+    {
+      "path": "as3/src/unicum/NameMarkerStripe.as",
+      "sha256": "f57e2a4872b022048a1bb10eef89d6baa49a8b4c408c2dc0c2e19b56f92972e0"
+    },
+    {
+      "path": "as3/src/unicum/PanelFlip.as",
+      "sha256": "a8e04110ee2f2975ccd50cbf073b1f664389c9440783dd099f50a4dbb89cf0e0"
+    },
+    {
+      "path": "as3/src/unicum/PanelModes.as",
+      "sha256": "961ab8abb4fbfdb59032bea56c56e8d7f853046429551c8bcd8008c50ba86f0f"
+    },
+    {
+      "path": "as3/src/unicum/PanelTextSwap.as",
+      "sha256": "795683b4333ee7d49d494228b5a746305146de4f10cc195e208769b630cb27b8"
+    },
+    {
+      "path": "as3/src/unicum/RosterGrid.as",
+      "sha256": "9b0fcd11a0a005cc0a59bb0b137e29bc90a17c6d4b47c835e5e3c57b20105c3f"
+    },
+    {
+      "path": "as3/src/unicum/RosterLayout.as",
+      "sha256": "5f3fc345ed0ce7d6f8cff3ce00fc4c334269c6f88d05ebd2c3f0701a33ea7782"
+    },
+    {
+      "path": "as3/src/unicum/RosterNames.as",
+      "sha256": "65ef84e95d7271b599e4ab3129c6a4451e5061d76189e06c65f047d092a99f84"
+    },
+    {
+      "path": "as3/src/unicum/RosterRows.as",
+      "sha256": "bccfd1e4e1e187a92b2443f7156f0641a25ba5243de65027bf5c898809766ca3"
+    },
+    {
+      "path": "as3/src/unicum/RosterTextColors.as",
+      "sha256": "7f719b5f99d551b22a26976f0b13c3016ff8f584e2e1a3d6424c0c05d9e1b33c"
+    },
+    {
+      "path": "docs/ARTIFACTS.json",
+      "sha256": "e3f859d8be1edfb9452dd3dbe39fc6cd67a486598ce6e649100b6b2677c81fb7"
+    },
+    {
+      "path": "docs/AUDIT.md",
+      "sha256": "49d0f31c0f42ab4af4289f2c3c756316f4f3bd57b9d8e8cef07a8c4665f7804f"
+    },
+    {
+      "path": "docs/DEPENDENCIES.json",
+      "sha256": "041753c76752dcfcb372fee6da1d3c8fe7a48a51de776a0dee7347fc956a36d3"
+    },
+    {
+      "path": "docs/DEVELOPMENT.md",
+      "sha256": "cf1d30e5d69a744e3f43876c4f0a19135367b5d368fbba0010e896606dfce00a"
+    },
+    {
+      "path": "docs/RELEASING.md",
+      "sha256": "7f972d0c34db009e5d437cf0b8bab2126958b34e6da993c4e4cd32450d627377"
+    },
+    {
+      "path": "licenses/opentype.txt",
+      "sha256": "a5b87c9bc191e7f9c06b07bd7cbbed3ed846dfdb50e859484b2c245aa1ab2e61"
+    },
+    {
+      "path": "licenses/phosphor-icons.txt",
+      "sha256": "b5b1f1da112d18ea2147decfd48ddc1bf2b5aeb6c265381579340e95b15a2bb2"
+    },
+    {
+      "path": "licenses/react-flagpack.txt",
+      "sha256": "0782049e6fcf875b7cb7d14095a2d6d6e80fcebbd7bd3e2d0532eb14106cf164"
+    },
+    {
+      "path": "licenses/roboto-condensed.txt",
+      "sha256": "82baba1bc6be17e47b138e90ab99ad134168f931282b68bc560102ab1db743c1"
+    },
+    {
+      "path": "licenses/royale-NOTICE.txt",
+      "sha256": "5484e625e85f8161e6e198c2ad956d5f43ea40e6bc617e5802320b8a3cc7404f"
+    },
+    {
+      "path": "licenses/sharp.txt",
+      "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68"
+    },
+    {
+      "path": "res/gui/maps/icons/unicum/wnx_unavailable.png",
+      "sha256": "4cc122ac2e5de4d4ca6f47d941caf0f529359d8ff9d0c8afce33c4b8e752865d"
+    },
+    {
+      "path": "res/gui/maps/icons/unicum/wnx_unavailable.svg",
+      "sha256": "c42b08966e6f5736552580b38706e293b7ce552d39d150cd15bc83ecb9170545"
+    },
+    {
+      "path": "src/unicum/battle/presentation.py",
+      "sha256": "e1ef442a58cfd904a45b4a1561a3816f27bfccbb40b5cc63ce535ecb25df48c2"
+    },
+    {
+      "path": "src/unicum/roster.py",
+      "sha256": "fa603812dd81b364265ec8f3abfce9fbf6edcd442c8d3c6c14c3de068b7bc7ce"
+    },
+    {
+      "path": "tools/check_battle_ui.mjs",
+      "sha256": "d17edfbbb2db7616dcede3c44445958b642e2fecfbe7e22decb99189b7ac6e8c"
+    },
+    {
+      "path": "tools/check_panel_flip.mjs",
+      "sha256": "dad7f46be881a1ebd577a24a1771c0bed9c5f2a1a3122caf2ddc9b1bf1d64dbb"
+    },
+    {
+      "path": "tools/check_roster_grid.mjs",
+      "sha256": "6dbb68a1a4f973958cc37c3094fa1074a366f33046603abcf1c2d08b194473f5"
+    },
+    {
+      "path": "tools/check_roster_layout.py",
+      "sha256": "0bfb9b6c52bd10b0f005eb7143b9c014ed1165fb9a71e680c9763dc88b027c2a"
+    },
+    {
+      "path": "tools/checks/marker_stripe.py",
+      "sha256": "36283a4bbfea6596ba53554cfbffd88a8cc5cdf7189ca3d17a0ab34d127237d2"
+    },
+    {
+      "path": "tools/checks/panel_stats.py",
+      "sha256": "2f839fc419dc92038292ed96c48bbba784cf5c79e28682ae78bb053125256ecf"
+    },
+    {
+      "path": "tools/checks/tab_live_tags.py",
+      "sha256": "b479404b440bd1aac683616d96977f52732fcc0682e9c8e4f709ead417952eaa"
+    }
+  ],
+  "removed": [
+    ".github/workflows/release-pr.yml",
+    ".github/workflows/release.yml",
+    "tools/publish_hub.py",
+    "tools/release.py",
+    "tools/release_pr.py",
+    "tools/visuals/build.py",
+    "tools/visuals/captures/garage.jpg",
+    "tools/visuals/common.css",
+    "tools/visuals/pages.py"
+  ]
+}

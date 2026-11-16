@@ -1,0 +1,942 @@
+# -*- coding: utf-8 -*-
+"""Checks for the win rate and battle count badges drawn beside a rating."""
+
+from checks.common import check
+
+
+def check_battle_count():
+    """The label a battle count badge carries, and why it is rounded."""
+    from unicum.badges import count
+
+    check('a small count is written out', count(844) == '844')
+    check('and grouped below ten thousand', count(9999) == '9 999')
+    check('rounded to whole thousands above it', count(22565) == '22k')
+    check('a big one too', count(161762) == '161k')
+    check('the boundary rounds', count(10000) == '10k')
+    check('and just below it does not', count(9500) == '9 500')
+    check('zero is a real answer and is shown', count(0) == '0')
+
+    # The rounding is not about width. A badge is one PNG per distinct label,
+    # written into the player's game folder, and a battle count differs for
+    # every player met. Rounded, the whole set is about a thousand files and
+    # stays there; exact, it would grow without end.
+    labels = set(count(n) for n in range(0, 1000000, 137))
+    check('the whole range of counts needs only so many badges', len(labels) < 1200)
+    check('and none of them carries a decimal', not any('.' in label for label in labels))
+
+    # The client font has no thin space, and a missing glyph draws a box.
+    check('nothing the client font cannot draw', all(ord(c) < 128 for c in count(9999)))
+
+
+def check_winrate_label():
+    from unicum.badges import winrate
+
+    check('a win rate is a whole percent by default', winrate(58.7) == '59%')
+    check('rounded, not truncated', winrate(58.4) == '58%' and winrate(58.5) == '59%')
+    check('to a tenth when asked', winrate(58.7, decimal=True) == '58.7%')
+    check('and a round number keeps its tenth', winrate(59.0, decimal=True) == '59.0%')
+    # Four characters against six: the pill is drawn into a players panel
+    # column, and the rating badge beside it is a whole number too.
+    check('the default is the shorter label', len(winrate(58.7)) < len(winrate(58.7, True)))
+
+
+class _Entry(object):
+    def __init__(self, ratings, known=True):
+        self.known = known
+        self.ratings = ratings
+
+    def stat(self, name, window):
+        value = (self.ratings.get(window) or {}).get(name)
+        return value if isinstance(value, (int, float)) else None
+
+
+class _Settings(object):
+    """Only what `extras` asks of the settings."""
+
+    def __init__(self, winrate=None, battles=None, rated=True, decimal=False):
+        self._winrate, self._battles = winrate, battles
+        self._rated, self._decimal = rated, decimal
+
+    def metric(self, surface):
+        return 'wnx' if self._rated else None
+
+    def vehicle_metric(self, surface):
+        return self.metric(surface)
+
+    def shows(self, surface):
+        return self._rated
+
+    def winrate_decimal(self):
+        return self._decimal
+
+    def extra(self, name, surface):
+        if not self._rated:
+            return None
+        return self._winrate if name == 'winrate' else self._battles
+
+
+class _Scales(object):
+    def color(self, scale, value, unit=None):
+        if scale != 'winrate' or unit != 'percent':
+            return None
+        return '#4A92B7' if value >= 56 else None
+
+
+def _badges(tmp, scales=None):
+    """A Badges that really draws, into a throwaway folder."""
+    from unicum.badges import Badges
+    return Badges(scales=scales, directory=tmp, res_path='gui/maps/icons/unicum/badges',
+                  drawable=lambda path: True)
+
+
+def check_extras_badges():
+    import os
+    import tempfile
+
+    tmp = tempfile.mkdtemp()
+    badges = _badges(tmp, _Scales())
+    entry = _Entry({'total': {'battles': 161762, 'winrate': 58.7},
+                    'recent': {'battles': 72, 'winrate': 52.7}})
+
+    out = badges.extras(entry, _Settings(winrate='total', battles='total'), 'battle')
+    check('both figures are drawn as badges, not as text',
+          out.count('<IMG') == 2 and '<font' not in out)
+    check('the win rate badge is painted on its own band', '59pct.4a92b7.png' in out)
+    # The one pill with no scale behind it. A colour invented for it would
+    # claim a meaning the site does not publish.
+    check('the battle count badge takes the one neutral band', '161k.4a4a4a.png' in out)
+    check('they are separated, since two touching images show a seam', '/> <IMG' in out)
+    check('with a leading space, since they follow the rating badge', out.startswith(' '))
+
+    written = sorted(os.listdir(tmp))
+    check('each badge is a real file on disk',
+          '59pct.4a92b7.png' in written and '161k.4a4a4a.png' in written)
+    check('and a PNG at that',
+          open(os.path.join(tmp, '161k.4a4a4a.png'), 'rb').read(8) == '\x89PNG\r\n\x1a\n')
+
+    # Drawn once and reused: the whole reason the label is rounded.
+    before = len(os.listdir(tmp))
+    badges.extras(_Entry({'total': {'battles': 161999, 'winrate': 58.9}}),
+                  _Settings(winrate='total', battles='total'), 'battle')
+    check('a nearby count reuses the badge already drawn', len(os.listdir(tmp)) == before)
+
+    out = badges.extras(entry, _Settings(winrate='total', battles='total', decimal=True), 'battle')
+    check('the decimal setting reaches the badge', '58-7pct.4a92b7.png' in out)
+
+
+class _Record(object):
+    """Only what `vehicle` asks of a per-vehicle record."""
+
+    def __init__(self, scope='mode', battles=70, wnx=1933.6, known=True, winrate=58.7):
+        self.known, self.scope, self.battles = known, scope, battles
+        self.winrate = winrate
+        self._wnx = wnx
+
+    def rating(self, metric):
+        return self._wnx if metric == 'wnx' else None
+
+
+def check_vehicle_badges():
+    """The pills a battle row shows for the tank its player brought."""
+    import tempfile
+
+    badges = _badges(tempfile.mkdtemp(), _VehicleScales())
+    settings = _Settings(battles='total')
+
+    out = badges.vehicle(_Record(), settings, 'battle')
+    check('the rating on this tank is drawn as a badge',
+          'wnx.1934.4a92b7.png' in out and out.count('<IMG') == 2)
+    check('the count of battles on it comes with it, on the neutral band',
+          '70.4a4a4a.png' in out)
+    check('it leads with a space, like every group that follows a name',
+          out.startswith(' '))
+
+    # The same drawing as the career rating: same metric, same value, same
+    # file. A second set of files for the same number would drift from the
+    # first the day one scale changes.
+    check('and the career rating draws the very same file',
+          badges.markup('wnx', 1933.6) in out)
+
+    # The tank's whole record, which is what the site sends for a mode it
+    # publishes no per-vehicle block about. Still about this tank, so still
+    # worth drawing -- in grey, which already means "true, but not the figure
+    # you asked for" on the row beside it.
+    out = badges.vehicle(_Record(scope='overall'), settings, 'battle')
+    check('the tank\'s whole record is drawn, as text rather than pills',
+          '<IMG' not in out and '1934' in out and '70' in out)
+    check('and it carries its battle count, which a career fallback never does',
+          out.count('#8a8a8a') == 2)
+    check('a pair the site has never stored draws nothing',
+          badges.vehicle(_Record(known=False), settings, 'battle') == '')
+    check('and no record at all draws nothing', badges.vehicle(None, settings, 'battle') == '')
+    # The one place a surface's choice about battle counts is overridden,
+     # and the figure beside it is the reason: a career count is twenty
+     # thousand and says nothing a reader did not assume, while a count on one
+     # tank is four or four hundred and is the whole difference between a
+     # rating worth reading and noise.
+    check('the count on this tank is drawn even where career counts are off',
+          badges.vehicle(_Record(), _Settings(), 'battle').count('<IMG') == 2)
+    check('a tank with no battles on it has only its rating to show',
+          badges.vehicle(_Record(battles=0), _Settings(), 'battle').count('<IMG') == 1)
+    # A skirmish, a stronghold, the global map: Wargaming's expected values
+    # are computed on random battles alone, so those modes have no WN rating
+    # per vehicle and never will. The win rate is what survives.
+    out = badges.vehicle(_Record(wnx=None), settings, 'battle')
+    check('a mode the WN scales do not measure shows the win rate on the tank',
+          '59pct.4a92b7.png' in out and out.count('<IMG') == 2)
+    check('and the rating takes precedence wherever there is one',
+          '59pct' not in badges.vehicle(_Record(), settings, 'battle'))
+    check('with neither, the count speaks alone',
+          badges.vehicle(_Record(wnx=None, winrate=None), settings, 'battle').count('<IMG') == 1)
+    check('and a surface showing nothing draws nothing here either',
+          badges.vehicle(_Record(), _Settings(rated=False), 'battle') == '')
+
+
+class _VehicleScales(object):
+    def color(self, scale, value, unit=None):
+        if scale == 'winrate':
+            return '#4A92B7' if value >= 56 else None
+        return '#4A92B7'
+
+
+def check_page_figures():
+    """The same figures, wrapped for a page instead of for Scaleform markup.
+
+    The Tab screen and the results screen draw the badge as three fields they
+    put in a style rather than as `<IMG>` markup. One drawing, two wrappings:
+    this is the second one.
+    """
+    import tempfile
+    from unicum import figures
+
+    badges = _badges(tempfile.mkdtemp(), _VehicleScales())
+
+    shown = figures.vehicle_figures(badges, _VehicleScales(), _Record(), 'wnx')
+    check('a record drawn for a page carries its scope, its rating and its count',
+          shown['scope'] == 'mode' and 'rating' in shown and 'battles' in shown)
+    check('and the rating is the badge image, not a shape built in CSS',
+          shown['rating']['image'].startswith('img://') and shown['rating']['width'] > 0)
+
+    # Outside random battles there is no rating to draw; the win rate is.
+    shown = figures.vehicle_figures(badges, _VehicleScales(), _Record(wnx=None), 'wnx')
+    check('a mode with no WN rating draws the win rate in its place',
+          'rating' not in shown and 'winrate' in shown and 'battles' in shown)
+    check('with neither, the count stands alone',
+          'winrate' not in figures.vehicle_figures(
+              badges, _VehicleScales(), _Record(wnx=None, winrate=None), 'wnx'))
+
+    check('a pair with no record at all is nothing, never a zero',
+          figures.vehicle_figures(badges, None, None, 'wnx') is None
+          and figures.vehicle_figures(badges, None, _Record(known=False), 'wnx') is None
+          and figures.vehicle_figures(badges, None, _Record(battles=0), 'wnx') is None)
+
+    check("the tank's whole record says so, for the page to draw it quieter",
+          figures.vehicle_figures(badges, _VehicleScales(),
+                                  _Record(scope='overall'), 'wnx')['scope'] == 'overall')
+
+
+def check_plain_rating():
+    """The grey number a row falls back to, and why it is not a pill."""
+    import tempfile
+
+    class Settings(object):
+        def __init__(self, value=1933.6):
+            self._value = value
+
+        def rating(self, entry, surface):
+            return self._value
+
+    badges = _badges(tempfile.mkdtemp(), _VehicleScales())
+    out = badges.plain(None, Settings(), 'battle')
+    check('the stand-in is text, not a badge', '<IMG' not in out and '1934' in out)
+    check('and grey, so it does not read as a figure on a scale', '#8a8a8a' in out)
+    check('it leads with a space, like every group that follows a name', out.startswith(' '))
+    check('no rating to stand in for draws nothing', badges.plain(None, Settings(None), 'battle') == '')
+
+
+def check_marker_width_ignores_tags():
+    """A tag's own text is not text the player reads.
+
+    The colour of the grey stand-in carries three 8s. Measured as rating
+    digits they would have widened the column by half a pill.
+    """
+    from unicum.battle.markup import markup_width
+
+    check('a grey figure is measured by its digits alone',
+          markup_width('<font face="$FieldFont" color="#8a8a8a">1934</font>') == 4 * 7)
+    check('an image still counts for the width it declares',
+          markup_width('<IMG SRC="img://b.png" width="38" height="12"/>') == 38)
+
+
+def check_alt_swaps_to_the_tank():
+    """Alt puts a battle row on the tank its player brought, where it can.
+
+    The swap is a swap, not an addition: the players panel column is the
+    narrowest place these numbers fit, and the career figure and the figure
+    on one tank cannot both be in it.
+    """
+    from unicum import modes
+    from unicum.battle.flags import BattleFlags
+
+    class Alt(object):
+        def __init__(self, down):
+            self.down = down
+
+    class Settings(object):
+        def __init__(self, waiting=(), figures='both'):
+            self._waiting, self._figures = waiting, figures
+
+        def alt_only(self, surface):
+            return surface in self._waiting
+
+        def rests_on_tank(self, surface):
+            return self._figures == 'tank'
+
+        def swaps_figures(self, surface):
+            return self._figures != 'career'
+
+    drawing = BattleFlags(None, None, None, None, Settings())
+
+    check('with no Alt key at all the row stays on the career figures',
+          not drawing._on_tank())
+    drawing.alt = Alt(False)
+    check('and with Alt up too', not drawing._on_tank())
+    drawing.alt = Alt(True)
+    check('held, the row goes on the tank', drawing._on_tank())
+
+    # Alt is asked to do two things: show a surface that waits for it, and
+    # change what an already visible one says. The three battle surfaces are
+    # drawn from one string of markers, so the question is asked once for all
+    # three: if any of them shows without Alt, Alt is free to change it.
+    drawing._settings = Settings(waiting=['panel'])
+    check('a surface waiting for Alt does not stop the one beside it swapping',
+          drawing._on_tank())
+    drawing._settings = Settings(waiting=['panel', 'tab', 'loading'])
+    check('with every surface waiting for Alt, the key is spent and nothing swaps',
+          not drawing._on_tank())
+
+    # The name this guard used to read was not a surface at all, so it
+    # answered False for everyone and never guarded anything.
+    from unicum.battle.drawing import _ALT_SURFACES
+    check('and the surfaces it asks about are the ones that exist',
+          set(_ALT_SURFACES) == set(['panel', 'tab', 'loading']))
+
+    # Read from the other end: a row set to rest on the tank shows the tank
+    # with nothing held, and Alt is the glance at the career instead. Holding
+    # a key is fine for a second opinion and no way to read the figure you
+    # came for.
+    drawing._settings = Settings(figures='tank')
+    drawing.alt = Alt(False)
+    check('a row set to rest on the tank needs no key at all', drawing._on_tank())
+    drawing.alt = Alt(True)
+    check('and Alt shows the career it rests away from', not drawing._on_tank())
+    drawing._settings = Settings(figures='tank', waiting=['panel', 'tab', 'loading'])
+    check('with every surface waiting for Alt, a revealed row arrives as it rests',
+          drawing._on_tank())
+
+    # The third value: the career alone, where Alt has nothing to swap to and
+    # must not pretend it has.
+    drawing._settings = Settings(figures='career')
+    drawing.alt = Alt(True)
+    check('under the career alone, holding Alt swaps nothing', not drawing._on_tank())
+    drawing.alt = Alt(False)
+    check('and it rests on the career too', not drawing._on_tank())
+
+    from unicum.settings.defaults import DEFAULTS, FIGURE_CHOICES, FIGURED
+    check('the choice lives on the surfaces that know which tank a row is about',
+          FIGURED == ('battle', 'battleResults'))
+    # The battle keeps what it shipped with. A surface that gains the choice
+    # later starts on the career, so nothing a reader already had changes
+    # under them and nothing new is asked of the site unheard.
+    check('the battle starts where it is today, a new surface on the career',
+          DEFAULTS['battle']['figures'] == 'both'
+          and DEFAULTS['battleResults']['figures'] == 'career')
+    check('its values are the three a row can be about, career first',
+          FIGURE_CHOICES == ('career', 'tank', 'both')),
+    check('and no surface that has no tank to speak of carries it',
+          not [s for s in ('contacts', 'profile', 'stronghold') if 'figures' in DEFAULTS[s]])
+
+    # Read once for the battle. It cannot change inside one, and this is
+    # asked for every player on every pass.
+    held, asked = modes.current_wg_mode, []
+    try:
+        modes.current_wg_mode = lambda: asked.append(1) or 'random'
+        check('the mode is the one being played', drawing._tank_mode() == 'random')
+        drawing._tank_mode()
+        drawing._tank_mode()
+        check('and the client answers for it once a battle, not once a row', len(asked) == 1)
+
+        drawing = BattleFlags(None, None, None, None, Settings())
+        del asked[:]
+        modes.current_wg_mode = lambda: asked.append(1) or None
+        check('a mode Wargaming publishes no per-vehicle record for has no mode at all',
+              drawing._tank_mode() is None)
+        drawing._tank_mode()
+        check('and that answer is held too, rather than asked again every pass',
+              len(asked) == 1)
+    finally:
+        modes.current_wg_mode = held
+
+    # One request for the screen, not one per row: Alt going down redraws
+    # every row in the same pass.
+    asked = []
+
+    class Session(object):
+        def callback(self, delay, func):
+            asked.append(delay)
+
+    from unicum.battle.flags import _BATCH_DELAY, _PAIR_DELAY
+    # The rows of a loading battle arrive over seconds, and nobody is waiting
+    # on a tank the instant it lands: Alt comes later. Gathering them for
+    # longer than the roster is what makes it one request instead of ten.
+    check('the tanks are gathered for longer than the roster is',
+          _PAIR_DELAY > _BATCH_DELAY)
+
+    drawing = BattleFlags(Session(), None, None, None, Settings())
+    drawing._request_vehicle(1, 100, 'random')
+    drawing._request_vehicle(2, 200, 'random')
+    drawing._request_vehicle(3, 300, 'random')
+    check('three rows asking at once queue one flush',
+          len(asked) == 1 and drawing._pending_pairs == set([(1, 100), (2, 200), (3, 300)]))
+    check('and it is the slower of the two delays', asked == [_PAIR_DELAY])
+    check('and the mode they are read over travels with them',
+          drawing._pair_mode == 'random')
+
+
+def check_a_tank_is_asked_for_before_alt():
+    """The pairs are asked for as the battle loads, not on the first press.
+
+    Waiting for the press was the cheaper of the two and it put the whole wait
+    where it hurts: the site answers these in twenty to thirty seconds under
+    load, which turns a key held for a moment into a key held for nothing.
+    """
+    from unicum import modes
+    from unicum.battle.flags import BattleFlags
+
+    class Alt(object):
+        def __init__(self, down):
+            self.down = down
+
+    class Lookup(object):
+        def needs_fetch(self, kind, entity_id):
+            return False
+
+        def get(self, kind, entity_id):
+            return None
+
+        def needs_vehicle(self, account_id, tank_id, mode=None):
+            return True
+
+        def vehicle(self, account_id, tank_id, mode=None):
+            return None
+
+    class Settings(object):
+        def __getitem__(self, key):
+            return key == 'showWnxBadges'
+
+        def shows(self, surface):
+            return True
+
+        def shows_flags(self, surface):
+            return False
+
+        def alt_only(self, surface):
+            return False
+
+        def rests_on_tank(self, surface):
+            return False
+
+        def swaps_figures(self, surface):
+            return True
+
+        def wants_vehicle(self, surface):
+            return True
+
+    class Badges(object):
+        def rating(self, entry, settings, surface):
+            return ' career'
+
+        def extras(self, entry, settings, surface, compact=False):
+            return ''
+
+        def vehicle(self, record, settings, surface):
+            return ''
+
+        def plain(self, entry, settings, surface):
+            return ' grey'
+
+    class Session(object):
+        def callback(self, delay, func):
+            pass
+
+    drawing = BattleFlags(Session(), Lookup(), None, Badges(), Settings())
+    held = modes.current_wg_mode
+    try:
+        modes.current_wg_mode = lambda: 'random'
+        badge = drawing._marker(1, 100)[1]
+        check('a tank is asked for with Alt up, so the answer is in hand when Alt goes down',
+              drawing._pending_pairs == set([(1, 100)]))
+        check('and until it is, the row shows the career figures as always', badge == ' career')
+
+        drawing.alt = Alt(True)
+        check('held with nothing in hand, the row shows the career rating in grey, not nothing',
+              drawing._marker(1, 100)[1] == ' grey')
+
+        modes.current_wg_mode = lambda: None
+        drawing = BattleFlags(Session(), Lookup(), None, Badges(), Settings())
+        drawing.alt = Alt(True)
+        check('and in a mode with no per-vehicle record, no pair is asked for and nothing changes',
+              drawing._marker(1, 100)[1] == ' career' and not drawing._pending_pairs)
+    finally:
+        modes.current_wg_mode = held
+
+    check('a row with no tank asks for nothing',
+          BattleFlags(Session(), Lookup(), None, Badges(), Settings())._marker(1)[1] == ' career')
+
+
+def check_battle_text_colors():
+    """Text colours use cached WNX only, and keep the unknown fallback empty."""
+    from unicum.api.entry import Entry
+    from unicum.battle.flags import BattleFlags
+    from unicum.badges import Badges
+
+    class Scales(object):
+        def __init__(self):
+            self.asked = []
+
+        def color(self, metric, value):
+            self.asked.append((metric, value))
+            return '#41A2C3' if metric == 'wnx' and value == 1234 else None
+
+    class Lookup(object):
+        entry = Entry(known=True, ratings={'recent': {'wnx': None},
+                                          'total': {'wnx': 1234}})
+
+        def needs_fetch(self, kind, entity_id):
+            return False
+
+        def get(self, kind, entity_id):
+            return self.entry
+
+    class Settings(object):
+        values = {'enabled': True, 'colorNamesByWnx': True,
+                  'colorClanTagsByWnx': True, 'colorVehiclesByWnx': True,
+                  'showWnxBadges': False}
+
+        def __getitem__(self, key):
+            return self.values[key]
+
+        def shows(self, surface):
+            return self.shown
+
+        def shows_flags(self, surface):
+            return False
+
+        def window_of(self, metric):
+            return 'recent'
+
+        shown = False
+
+    scales = Scales()
+    badges = Badges(scales=scales, directory='', drawable=lambda path: False)
+    lookup = Lookup()
+    settings = Settings()
+    drawing = BattleFlags(None, lookup, None, badges, settings)
+    color = drawing._marker(1)[2]
+    expected_color = Badges(scales=Scales(), directory='',
+                            drawable=lambda path: False).text_color('wnx', 1234)
+    check('battle text colour takes WNX from the cached recent-or-career entry',
+          color == expected_color and scales.asked == [('wnx', 1234)])
+
+    lookup.entry = Entry(known=False)
+    check('an unknown player gets no replacement text colour',
+          drawing._marker(2)[2] is None)
+
+    lookup.entry = Entry(known=True, ratings={'total': {'wnx': 1234}})
+    settings.values['colorNamesByWnx'] = False
+    check('the shared WNX colour remains available when one label switch is off',
+          drawing._marker(3)[2] == expected_color)
+    settings.values['colorVehiclesByWnx'] = False
+    settings.values['colorClanTagsByWnx'] = False
+    check('all three text switches off skip the colour lookup',
+          drawing._marker(4)[2] is None and len(scales.asked) == 3)
+
+    class Pills(object):
+        def __init__(self):
+            self.markups = []
+
+        def color(self, metric, value):
+            return scales.color(metric, value)
+
+        def text_color(self, metric, value):
+            return scales.color(metric, value)
+
+        def markup(self, metric, value):
+            self.markups.append((metric, value))
+            return '<IMG SRC="%s.%d.png"/>' % (metric, round(value))
+
+        def rating(self, entry, settings, surface):
+            return ' rating'
+
+        def extras(self, entry, settings, surface, compact=False):
+            return ' extras'
+
+    drawing._badges = Pills()
+    settings.shown = True
+    check('the old WNX badge block is hidden by default',
+          drawing._marker(5)[1] == '')
+    settings.values['showWnxBadges'] = True
+    check('the separate badge switch can restore the old row block',
+          drawing._marker(6)[1] == ' rating extras')
+    settings.values['colorNamesByWnx'] = True
+    check('a mode that hides ratings still keeps WNX text colour available',
+          drawing._marker(7, team_shown=False)[1:3] == ('', '#41A2C3'))
+    wnx_entry = Entry(known=True, ratings={'recent': {'wnx': 1234, 'wn8': 9999}})
+    check('long mode builds its standalone pill from WNX and the official badge helper',
+          drawing._long_wnx_badge(wnx_entry) == '<IMG SRC="wnx.1234.png"/>'
+          and drawing._badges.markups[-1] == ('wnx', 1234))
+    check('long mode leaves an unavailable WNX pill empty',
+          drawing._long_wnx_badge(Entry(known=True, ratings={'recent': {'wn8': 9999}})) == '')
+
+
+def check_tab_uses_wnx_only():
+    """The Gameface Tab gets a number and color from the official WNX scale."""
+    from unicum.api.entry import Entry
+    from unicum.tab_screen import _wnx_data
+
+    class Scales(object):
+        def __init__(self):
+            self.asked = []
+
+        def color(self, metric, value):
+            self.asked.append((metric, value))
+            return '#41A2C3' if metric == 'wnx' and value == 1234.4 else None
+
+        def text_color(self, metric, value):
+            return self.color(metric, value)
+
+    scales = Scales()
+    entry = Entry(known=True, ratings={'recent': {'wnx': None, 'wn8': 7777},
+                                      'total': {'wnx': 1234.4, 'wn8': 8888}})
+    raw, data = _wnx_data(entry, 'recent', scales)
+    check('Tab text reads WNX with the existing recent-to-total fallback',
+          raw == 1234.4 and data == {'wnx': 1234, 'color': '#41A2C3',
+                                     'bandColor': '#41A2C3', 'wnxAvailable': True}
+          and scales.asked == [('wnx', 1234.4), ('wnx', 1234.4)])
+    check('Tab player data contains no flags or WN8 field',
+          set(data) == set(('wnx', 'color', 'bandColor', 'wnxAvailable')))
+    check('Tab omits the number for an unknown WNX',
+          _wnx_data(Entry(known=False), 'recent', scales) == (None, {'wnxAvailable': False})
+          and _wnx_data(Entry(known=True, ratings={'total': {'wn8': 9000}}),
+                        'recent', scales) == (None, {'wnxAvailable': False}))
+
+    from unicum.tab_screen import _battle_stats
+
+    class Settings(object):
+        def extra(self, name, surface):
+            return 'total'
+
+        def winrate_decimal(self):
+            return False
+
+    figures = Entry(known=True, ratings={'total': {'battles': 12345, 'winrate': 58.7}})
+    check('Tab carries the original count and win-rate formatting as text',
+          _battle_stats(figures, Settings()) == {'battles': '12.3k', 'winrate': '59%'})
+    check('Tab leaves unavailable extras absent instead of inventing zeroes',
+          _battle_stats(Entry(known=False), Settings()) == {}
+          and _battle_stats(Entry(known=True, ratings={'total': {'battles': None}}),
+                            Settings()) == {})
+
+
+def check_tab_layout_contract():
+    """Exercise the shared data contract used by both redesigned rosters."""
+    from unicum.roster import row_data, tab_battles, marker_text
+    from unicum.api.entry import Entry
+
+    class Settings(object):
+        def window_of(self, metric):
+            return 'recent'
+
+        def extra(self, key, surface):
+            return 'total'
+
+        def winrate_decimal(self):
+            return False
+
+        def shows(self, surface):
+            return True
+
+    class Scale(object):
+        def color(self, metric, value):
+            check('roster asks the original scale for WNX only', metric == 'wnx')
+            return '#7a4fb2' if value is not None else None
+
+        def text_color(self, metric, value):
+            return self.color(metric, value)
+
+    known = Entry(known=True, ratings={'recent': {'wnx': None},
+                  'total': {'wnx': 3001, 'winrate': 58.7, 'battles': 160250}})
+    values = row_data(known, Settings(), Scale())
+    check('both rosters retain cached lifetime WNX while recent is absent',
+          values['wnx'] == 3001 and values['wnxAvailable'] is True)
+    check('row accents use the exact original band colour', values['bandColor'] == '#7a4fb2')
+    check('WR and battles remain separate values with compact count formatting',
+          values['winrate'] == '59%' and values['battles'] == '160.3k')
+    for entry in (None, Entry(known=False), Entry(known=True, ratings={})):
+        missing = row_data(entry, Settings(), Scale())
+        check('unknown rows carry no fabricated WNX',
+              not missing['wnxAvailable'] and 'wnx' not in missing)
+    cases = [(300, '0.3k'), (900, '0.9k'), (1000, '1k'), (1500, '1.5k'),
+             (2500, '2.5k'), (None, None)]
+    for value, expected in cases:
+        check('shared roster count %r -> %r' % (value, expected), tab_battles(value) == expected)
+
+    packet = marker_text({9: ['', 0, '', 0, '#fff', '', 'Visible', '', '', 0,
+                              '#7a4fb2', '3001', '59%', '160.3k']})
+    check('the Scaleform bridge keeps all 15 fields aligned with empty badges',
+          len(packet.split('\t')) == 15 and packet.split('\t')[-4:]
+          == ['#7a4fb2', '3001', '59%', '160.3k'])
+    check('invalid numeric WNX is treated as unavailable',
+          row_data(Entry(known=True, ratings={'total': {'wnx': float('nan')}}),
+                   Settings(), Scale())['wnxAvailable'] is False)
+    _check_tab_stale(known, Settings(), Scale())
+    _check_roster_publish()
+    _check_native_roster_names()
+
+
+def _check_tab_stale(entry, base, scale):
+    import json
+    from unicum.tab_screen import TabScreen
+
+    class Lookup(object):
+        wanted = []
+
+        def needs_fetch(self, kind, account):
+            return True
+
+        def get(self, kind, account):
+            return entry
+
+        def prefetch(self, **kwargs):
+            self.wanted.append(kwargs['players'])
+
+    class Settings(object):
+        def __getitem__(self, key):
+            return True
+
+        def metric(self, surface):
+            return 'wnx'
+
+        def alt_only(self, surface):
+            return False
+
+        def shows_average(self, surface):
+            return False
+
+        window_of = lambda self, metric: base.window_of(metric)
+        extra = lambda self, key, surface: base.extra(key, surface)
+        winrate_decimal = lambda self: base.winrate_decimal()
+
+    class Model(object):
+        def _setString(self, index, value):
+            self.data = json.loads(value)
+
+    lookup = Lookup()
+    screen = TabScreen(None, lookup, None, scale, None, Settings(), None)
+    screen._roster = lambda: [(['Visible', 'AnonymousAlias'], 9, True)]
+    model = Model()
+    screen._publish(model)
+    check('Tab displays stale cached WNX while requesting its refresh',
+          model.data['players']['Visible']['wnx'] == 3001
+          and model.data['players']['AnonymousAlias'] == model.data['players']['Visible']
+          and lookup.wanted == [[9]])
+
+
+def _check_roster_publish():
+    from unicum import modes, views
+    from unicum.battle import drawing
+    from unicum.battle.flags import BattleFlags
+
+    class Settings(object):
+        def __getitem__(self, key):
+            return True
+
+        def shows(self, surface):
+            return True
+
+        def alt_only(self, surface):
+            return False
+
+    class Arena(object):
+        def getVehiclesInfoIterator(self):
+            return []
+
+    class Alt(object):
+        down = False
+
+    class View(object):
+        pass
+
+    view = View()
+    controller = BattleFlags(None, None, None, None, Settings())
+    controller.alt = Alt()
+    controller._redraw = lambda: None
+    controller._take_back = lambda: None
+    controller._probed = 0
+    originals = (views.battle_view, views.html_team_names, drawing._arena,
+                 drawing._default_order, modes.team_filter)
+    try:
+        views.battle_view = lambda: view
+        views.html_team_names = lambda: True
+        drawing._arena = lambda: Arena()
+        drawing._default_order = lambda arena: {'leftItemsIDs': [], 'rightItemsIDs': []}
+        modes.team_filter = lambda settings: lambda team: True
+        controller._roster_props = {9: ['native input']}
+        views.battle_view = lambda: None
+        controller._publish()
+        check('native name inputs survive while the AS3 view is still loading',
+              controller._roster_props == {9: ['native input']})
+        views.battle_view = lambda: view
+        states = []
+        for held in (False, True, False, True, False):
+            controller.alt.down = held
+            controller._publish()
+            states.append((view.panelWnxBadgesVisible, view.tabHidden,
+                           view.loadingHidden, view.rosterStatsEnabled))
+        check('rapid Alt transitions affect panel pills while Tab/loading stay independent',
+              states == [(held, False, False, True)
+                         for held in (False, True, False, True, False)])
+    finally:
+        (views.battle_view, views.html_team_names, drawing._arena,
+         drawing._default_order, modes.team_filter) = originals
+
+
+def _check_native_roster_names():
+    from unicum.roster import native_name_fields, marker_text
+    data = {'playerName': u'Original_Player', 'playerFakeName': u'Visible_Alias',
+            'clanAbbrev': u'CLAN', 'region': None, 'userTags': ['friend', 'self']}
+    fields = native_name_fields(data)
+    check('loading name inputs preserve native real/fake/tag values for the client formatter',
+          fields == [u'Original_Player', u'Visible_Alias', u'CLAN', '', 'friend,self', '1'])
+    base = ['', 0, '', 0, '', '', '', '', '', 0, '', '', '', '']
+    packet = marker_text({9: base + fields}).split('\t')
+    check('extended bridge preserves native name inputs after rating columns',
+          len(packet) == 21 and packet[15:] == fields)
+    check('absent native data never fabricates a name',
+          native_name_fields(None) == [''] * 6 and native_name_fields({}) == [''] * 6)
+    check('an intentionally empty native name remains empty and distinct from missing input',
+          native_name_fields({'playerName': None}) == ['','','','','','1'])
+    check('capturing native name inputs leaves the original client VO unchanged',
+          data['region'] is None and data['userTags'] == ['friend', 'self'])
+
+
+def check_extras_fallbacks():
+    import tempfile
+    from unicum.badges import Badges
+
+    entry = _Entry({'total': {'battles': 161762, 'winrate': 58.7}})
+    plain = _badges(tempfile.mkdtemp(), _Scales())
+
+    low = _Entry({'total': {'battles': 10, 'winrate': 48.0}})
+    out = plain.extras(low, _Settings(winrate='total'), 'battle')
+    check('a win rate off the painted range still shows, as text',
+          '48%' in out and '<font' in out)
+
+    # A client whose resource folder was made after it started cannot load
+    # any badge; the figures must still reach the player.
+    mute = Badges(scales=_Scales(), directory='', drawable=lambda path: False)
+    out = mute.extras(entry, _Settings(winrate='total', battles='total'), 'battle')
+    check('a client that cannot draw badges falls back to text',
+          '59%' in out and '161k' in out and '<IMG' not in out)
+    check('and that text is in the client own font', "face='$FieldFont'" in out)
+
+    check('either figure can be off on its own',
+          '%' not in plain.extras(entry, _Settings(battles='total'), 'battle'))
+    check('both off draws nothing at all', plain.extras(entry, _Settings(), 'battle') == '')
+    check('a surface turned off entirely draws nothing',
+          plain.extras(entry, _Settings(winrate='total', battles='total', rated=False), 'battle') == '')
+    check('a player the server knows nothing about draws nothing',
+          plain.extras(_Entry({}, known=False), _Settings(battles='total'), 'battle') == '')
+    check('nor does one whose window the server has not filled',
+          plain.extras(_Entry({'total': {}}), _Settings(winrate='total', battles='total'), 'battle') == '')
+
+
+def check_badge_glyphs():
+    """The masks a badge is laid out from, and the ones the new labels need."""
+    from unicum import badge_png
+
+    for label in ('59%', '58.7%', '161k', '9 999'):
+        width = badge_png.width_of(label)
+        check('a badge of %r has a width' % label, width > 0)
+        drawn, rows = badge_png.pixels(label, '#4A92B7')
+        check('and draws to exactly that width',
+              drawn == width and len(rows) == badge_png.HEIGHT)
+
+    # Every glyph these labels need must be in the set, or its cell comes out
+    # blank and the badge silently loses a character.
+    masks = badge_png._load()
+    for char in '0123456789.%k':
+        check('the mask set has %r' % char,
+              char in masks['digits'] and char in masks['cells'])
+    check('a digit keeps the grid cell the layout assumes',
+          badge_png.cell_of('0') == badge_png.DIGIT_WIDTH)
+    check('while a full stop is narrower than a digit',
+          badge_png.cell_of('.') < badge_png.DIGIT_WIDTH)
+    check('and a percent sign is wider', badge_png.cell_of('%') > badge_png.DIGIT_WIDTH)
+    check('a rating still lays out grouped by thousands',
+          ''.join(badge_png.layout(3818)) == '3 818')
+
+
+def check_entry_stat():
+    """Unlike a rating, these never fall back to the other window."""
+    from unicum.api.entry import Entry
+
+    entry = Entry(known=True, ratings={'total': {'battles': 22565, 'winrate': 59.5},
+                                       'recent': {'battles': None, 'winrate': None}})
+    check('a figure comes from the window it was asked for',
+          entry.stat('battles', 'total') == 22565)
+    check('and a window the server has not filled says so, rather than lying',
+          entry.stat('battles', 'recent') is None)
+    check('a window that does not exist at all is the same answer',
+          entry.stat('battles', 'nonsense') is None)
+    check('while a rating still falls back to the career value',
+          Entry(known=True, ratings={'total': {'wnx': 3274}, 'recent': {'wnx': None}})
+          .rating('wnx', 'recent') == 3274)
+
+
+def check_extras_setting():
+    import os
+    import tempfile
+    from unicum.runtime.session import Session
+    from unicum.settings import Settings, validate
+
+    check('battles are shown over a whole career by default', validate({})['battles'] == 'total')
+    check('so is the win rate', validate({})['winrate'] == 'total')
+    check('and the win rate is a whole percent', validate({})['winrateDecimal'] is False)
+    check('a nonsense value falls back to the default',
+          validate({'battles': 'yesterday'})['battles'] == 'total')
+    check('and a real one survives', validate({'battles': 'recent'})['battles'] == 'recent')
+    check('the decimal survives a round trip',
+          validate({'winrateDecimal': True})['winrateDecimal'] is True)
+
+    settings = Settings(Session(generation=0),
+                        store=os.path.join(tempfile.mkdtemp(), 'settings.json'))
+    check('a fresh install draws both over the career',
+          settings.extra('battles', 'battle') == 'total'
+          and settings.extra('winrate', 'battle') == 'total')
+    check('and to a whole percent', not settings.winrate_decimal())
+    settings.update({'battles': 'off'})
+    check('off means nothing to draw', settings.extra('battles', 'battle') is None)
+    check('and leaves the win rate alone', settings.extra('winrate', 'battle') == 'total')
+    # Deliberately NOT tied to the rating: contacts and the profile show a
+    # name and a flag by default, and a player who asks for battle counts in
+    # the garage means those two screens above all.
+    settings.update({'battle': {'rating': False}})
+    check('a surface showing flags but no rating still draws them',
+          settings.extra('winrate', 'battle') == 'total')
+    settings.update({'battle': {'rating': False, 'flags': False}})
+    check('a surface turned off entirely draws nothing',
+          settings.extra('winrate', 'battle') is None)
+    settings.update({'enabled': False})
+    check('the mod off draws nothing anywhere',
+          settings.extra('winrate', 'contacts') is None)
