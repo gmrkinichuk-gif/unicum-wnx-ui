@@ -6,7 +6,7 @@ to the upstream wgmods service. Removed upstream tools targeted its repository
 or mod-hub ID and must not be reused for this derivative without adaptation.
 
 1. Keep the mod version at the latest accepted CHANGELOG version (currently
-   0.9.15); bump it only for a deliberately versioned change.
+   0.9.16); bump it only for a deliberately versioned change.
 2. Build from a matching installed EU client with README's commands, or run
    the manual `candidate` workflow with the current version. It reads the live
    client through the inherited client-files action. A candidate is an Actions
@@ -22,9 +22,10 @@ or mod-hub ID and must not be reused for this derivative without adaptation.
    `.wotmod`, manifest and checksums, and provide matching Corresponding Source
    to every recipient. Do not replace verified assets with mirror-built output.
 
-The private repository remains private. Before distributing outside its
-authorized collaborators, arrange source access for recipients in compliance
-with the AGPL; repository privacy must not be changed as a side effect.
+Repository visibility is a separate maintainer decision. On 2026-11-16 the
+maintainer explicitly requested public source access together with the 0.9.16
+update. A public repository provides source access; publishing a binary Release
+still follows the validation and license steps above.
 
 The CI `build` workflow uses mirrored client files solely as a compiler and
 packaging regression check. Its temporary game version is a CI sentinel, not

@@ -59,6 +59,7 @@ const ownRow=document.querySelector('[data-qa="allies-4"]');
 ownRow.classList.add('Player_base__current_b9e88');
 setTimeout(() => {
  const errors = [], metrics = [];
+ if(styleWrites-window.__styleWritesAt500!==0) errors.push('settled poll rewrote '+(styleWrites-window.__styleWritesAt500)+' inline styles');
  function deathCycle(done) {
    const records=['allies-0','enemies-0'].map(id=>{
      const row=document.querySelector('[data-qa="'+id+'"]');
@@ -150,14 +151,14 @@ setTimeout(() => {
    if(document.querySelectorAll('.unicum-roster-stats,.unicum-roster-live-slot,.unicum-roster-live-host,.unicum-roster-live-tag,.unicum-roster-row,.unicum-roster-view,.unicum-roster-content,.unicum-roster-contour').length) errors.push('teardown leaked decoration');
    api.model.model.data=JSON.stringify(old);
    part=(new Function('api',source))(api);
-   document.querySelector('#qa-result').textContent=JSON.stringify({errors,metrics,liveEvidence,viewport:innerWidth,maxPollMs:Math.max(...pollTimes)});
+   document.querySelector('#qa-result').textContent=JSON.stringify({errors,metrics,liveEvidence,viewport:innerWidth,maxPollMs:Math.max(...pollTimes),styleWrites});
    });});
  },250);
 },600);
 """
     overrides = 'html{font-size:1px} body{margin:0;font:13px Arial;background:#777} .FullStatsApp_view_f1db1{padding-top:120px} .Player_vehicleContour_image_a35ee{color:white} #qa-result{font:10px monospace;position:absolute;top:800px;color:white;max-width:100%;white-space:pre-wrap} button{width:20px}'
     compatibility = 'Object.defineProperty(CSSStyleDeclaration.prototype,"getPropertyPriority",{value:undefined,configurable:true});Object.defineProperty(Node.prototype,"isConnected",{value:undefined,configurable:true});Object.defineProperty(NodeList.prototype,Symbol.iterator,{value:undefined,configurable:true});'
-    instrumentation = 'const pollTimes=[];const nativeInterval=window.setInterval;window.setInterval=(fn,delay)=>nativeInterval(()=>{const t=performance.now();fn();pollTimes.push(performance.now()-t)},delay);'
+    instrumentation = 'const pollTimes=[];let styleWrites=0;const nativeSetProperty=CSSStyleDeclaration.prototype.setProperty;CSSStyleDeclaration.prototype.setProperty=function(){styleWrites++;return nativeSetProperty.apply(this,arguments)};window.__styleWritesAt500=0;setTimeout(()=>window.__styleWritesAt500=styleWrites,500);const nativeInterval=window.setInterval;window.setInterval=(fn,delay)=>nativeInterval(()=>{const t=performance.now();fn();pollTimes.push(performance.now()-t)},delay);'
     images = icon_css(str(GAME))
     return '<!doctype html><meta charset="utf-8"><style>'+native_css+style+overrides+images+'</style>'+body+'<script>const originalNames='+json.dumps(names)+';const api={model:{model:{data:'+json.dumps(json.dumps(data))+'}},report:console.log};const source='+json.dumps(script)+';'+compatibility+instrumentation+'let part=(new Function("api",source))(api);'+BROWSER_CHECKS+verify+'</script>'
 

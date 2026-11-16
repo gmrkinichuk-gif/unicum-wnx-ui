@@ -58,9 +58,11 @@ def run():
                        _lookup=Record(get=lambda kind, account: entries[account]))
         controller = NameMarkers.__new__(NameMarkers)
         controller._flags = flags
+        controller._payloads = {}
         controller._reload_view_if_changed = lambda manager, ours: None
-        controller._text = lambda unused: 'existing badge text'
-        controller._images = lambda unused: 'existing.png|20|10|4'
+        formatted = []
+        controller._text = lambda item: formatted.append(('text', item)) or 'existing badge text'
+        controller._images = lambda item: formatted.append(('images', item)) or 'existing.png|20|10|4'
         vehicles = dict((i, Record(team=i, player=Record(accountDBID=i))) for i in (1, 2))
         drawing._arena = lambda: Record(getVehicleInfo=lambda vehicle: vehicles[vehicle])
         modes.team_filter = lambda settings: lambda team: True
@@ -77,11 +79,13 @@ def run():
                                 'existing.png|20|10|4') for call in calls))
         controller._draw(manager)
         check('unchanged marker data causes no second canvas update', len(calls) == 2)
+        check('unchanged marker entries reuse their prepared payload', len(formatted) == 4)
         entries[1] = entries[2] = Entry(ratings={})
         controller._draw(manager)
         controller._draw(manager)
         check('unknown WNX sends one stable absent-colour sentinel, never zero or NaN',
               len(calls) == 4 and all(call[-1] == -1 for call in calls[2:]))
+        check('replacement API entries invalidate only the prepared account payloads', len(formatted) == 8)
         modes.team_filter = lambda settings: lambda team: team == 1
         controller._draw(manager)
         check('team-filtered marker sends disabled sentinel instead of neutral grey',

@@ -153,6 +153,23 @@ package unicum
          return null;
       }
 
+      // A hidden loading/Tab branch can remain on stage for the whole battle.
+      // Its descendants inherit visibility/alpha, so updating all 30 rows at
+      // 20 Hz cannot affect the screen and only burns CPU. Unknown non-display
+      // hosts stay enabled for compatibility with older client proxies.
+      private static function displayed(target:Object) : Boolean
+      {
+         var node:DisplayObject = target as DisplayObject;
+         if(node == null) return true;
+         if(node.stage == null) return false;
+         while(node != null)
+         {
+            if(!node.visible || node.alpha <= 0) return false;
+            node = node.parent;
+         }
+         return true;
+      }
+
       // How many of the three kinds of screen the search has found. Drives the
       // rescan in TeamNamesHtml, and counts rather than answering yes/no: the
       // loading screen is the one that exists while this view is still
@@ -259,15 +276,18 @@ package unicum
          // No ids: every row's fields are hidden, as for a player with no rating.
          for(var panel:Object in this._panels)
          {
+            if(!displayed(panel)) continue;
             this.drawList(field(panel, "listLeft") as DisplayObjectContainer, this._left, true, panelHidden);
             this.drawList(field(panel, "listRight") as DisplayObjectContainer, this._right, false, panelHidden);
          }
          for(var table:Object in this._tables)
          {
+            if(!displayed(table)) continue;
             this.drawTable(table, tabHidden);
          }
          for(var loading:Object in this._loadings)
          {
+            if(!displayed(loading)) continue;
             if(this._redesign) this._rosterRows.prepareLoading(field(loading, "vehicleIconsAlly"), field(loading, "vehicleIconsEnemy"));
             this.drawIcons(field(loading, "vehicleIconsAlly"), this._left, true, loadingHidden);
             this.drawIcons(field(loading, "vehicleIconsEnemy"), this._right, false, loadingHidden);

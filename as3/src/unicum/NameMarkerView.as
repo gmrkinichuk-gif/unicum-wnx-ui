@@ -61,6 +61,15 @@ package unicum
       private var _stripe:NameMarkerStripe;
       private var _wnxColor:Number = -2;
 
+      // Geometry of a native name field normally stays unchanged for many
+      // frames. Keep the cheap public properties as a token so getBounds()
+      // and getTextFormat() only run when the client actually changes mode,
+      // text or layout.
+      private var _badgeField:TextField;
+      private var _badgeHost:DisplayObject;
+      private var _badgeToken:String = "";
+      private var _spacing:Number = NaN;
+
       public function NameMarkerView()
       {
          super();
@@ -109,6 +118,7 @@ package unicum
       public function setAnchor(field:TextField) : void
       {
          this._anchor = field;
+         this._badgeToken = "";
          this.layout();
       }
 
@@ -125,6 +135,7 @@ package unicum
       public function setData(text:String, color:Number, images:String = "", wnxColor:Number = -2) : void
       {
          this._wnxColor = wnxColor;
+         this._badgeToken = "";
          var format:TextFormat = this._anchor != null ? this._anchor.getTextFormat() : new TextFormat("$FieldFont", 14);
          format.color = uint(color);
          format.align = TextFormatAlign.LEFT;
@@ -173,6 +184,10 @@ package unicum
          this._vehicleAnchor = null;
          this._healthAnchor = null;
          this._typeAnchor = null;
+         this._badgeField = null;
+         this._badgeHost = null;
+         this._badgeToken = "";
+         this._spacing = NaN;
          this._wanted = [];
          this._stripe.dispose();
          // An image may still be loading when a native marker is destroyed.
@@ -264,17 +279,35 @@ package unicum
          var field:TextField = this._anchor;
          var badgeVisible:Boolean = field != null && field.parent != null && this.parent != null &&
                                     field.visible && (this._wanted.length > 0 || this._label.text != "");
-         this._label.alpha = this._shadow.alpha = this._row.alpha = badgeVisible ? 1 : 0;
+         var alpha:Number = badgeVisible ? 1 : 0;
+         if(this._label.alpha != alpha) this._label.alpha = alpha;
+         if(this._shadow.alpha != alpha) this._shadow.alpha = alpha;
+         if(this._row.alpha != alpha) this._row.alpha = alpha;
          if(badgeVisible) this.placeBadge(field);
          this._stripe.update(field, this._vehicleAnchor, this._healthAnchor, this._wnxColor, this._typeAnchor);
          var spacing:Number = this._stripe.visible ? Math.max(0,this._stripe.contentRight + 4) : 0;
-         this._label.x = this._row.x = spacing;
-         this._shadow.x = spacing + SHADOW_OFFSET;
-         visible = badgeVisible || this._stripe.visible;
+         if(this._spacing != spacing)
+         {
+            this._label.x = this._row.x = spacing;
+            this._shadow.x = spacing + SHADOW_OFFSET;
+            this._spacing = spacing;
+         }
+         var shown:Boolean = badgeVisible || this._stripe.visible;
+         if(visible != shown) visible = shown;
       }
 
       private function placeBadge(field:TextField) : void
       {
+         var token:String = [field.x,field.y,field.width,field.height,field.scaleX,field.scaleY,
+                             field.rotation,field.textWidth,field.textHeight,field.text,
+                             this._label.height].join(":");
+         if(this._badgeField == field && this._badgeHost == this.parent && this._badgeToken == token)
+         {
+            return;
+         }
+         this._badgeField = field;
+         this._badgeHost = this.parent;
+         this._badgeToken = token;
          var box:Rectangle = field.getBounds(this.parent);
          var width:Number = Math.min(field.textWidth + 4, box.width);
          var align:String = field.getTextFormat().align;
@@ -288,12 +321,15 @@ package unicum
             right = box.left + (box.width + width) / 2;
          }
          var middle:Number = box.top + box.height / 2;
-         x = Math.round(right + GAP);
-         y = Math.round(middle);
-         this._label.y = Math.round(-this._label.height / 2);
-         this._shadow.x = this._label.x + SHADOW_OFFSET;
-         this._shadow.y = this._label.y + SHADOW_OFFSET;
-         this._row.y = 0;
+         var nextX:Number = Math.round(right + GAP);
+         var nextY:Number = Math.round(middle);
+         var labelY:Number = Math.round(-this._label.height / 2);
+         if(x != nextX) x = nextX;
+         if(y != nextY) y = nextY;
+         if(this._label.y != labelY) this._label.y = labelY;
+         if(this._shadow.x != this._label.x + SHADOW_OFFSET) this._shadow.x = this._label.x + SHADOW_OFFSET;
+         if(this._shadow.y != labelY + SHADOW_OFFSET) this._shadow.y = labelY + SHADOW_OFFSET;
+         if(this._row.y != 0) this._row.y = 0;
       }
    }
 }

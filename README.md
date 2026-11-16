@@ -4,7 +4,7 @@ A modified [Unicum.gg World of Tanks client mod](https://github.com/unicum-gg/un
 focused on WNX presentation in battle. This is an independent derivative,
 not an official Unicum.gg or Wargaming release.
 
-The current local modification is **0.9.15**, derived from the **0.9.0** source
+The current local modification is **0.9.16**, derived from the **0.9.0** source
 snapshot. These numbers come from the supplied changelogs, not the development
 bootstrap placeholders. The release builder injects the requested version into
 the compiled package. See [CHANGELOG.md](CHANGELOG.md) and [NOTICE](NOTICE).
@@ -29,6 +29,15 @@ define replacement rating thresholds. The current UI uses row/marker accents;
 the legacy `colorNamesByWnx`, `colorClanTagsByWnx` and `colorVehiclesByWnx`
 settings are high-contrast text overrides in the redesigned rosters.
 
+## Performance update 0.9.16
+
+Unchanged Tab rows no longer repeat inline colour writes. Overhead markers cache
+geometry and per-account payloads, and hidden Scaleform tables skip row work.
+In a single matched replay window, mean sampled FPS changed from 69.58 to 70.42
+and Python game-thread time from 2.40% to 0.96%. These are local measurements,
+not a guarantee for every system; [the report](docs/PERFORMANCE_0.9.16.md) includes
+P10, the lower isolated minimum, checks and known limitations.
+
 ## Compatibility and status
 
 The supplied packages and installed client target **World of Tanks EU 2.4.1.1**.
@@ -40,8 +49,10 @@ Never load another Unicum.gg version or the development bootstrap alongside it.
 
 ## Installation and removal
 
-No GitHub Release is published by this initial source import. Once a build has
-been approved in the client, use its `dist/unicum.gg_0.9.15_wot_2.4.1.1.zip`.
+Version 0.9.16 was built from the installed compatible EU client and replay-tested.
+See [performance and validation notes](docs/PERFORMANCE_0.9.16.md) for results and
+remaining limitations. No GitHub Release has been published; build the installation
+ZIP as described below, then use `dist/unicum.gg_0.9.16_wot_2.4.1.1.zip`.
 
 1. Close the client and back up existing Unicum settings and mod files.
 2. Remove the previous `gg.unicum_*.wotmod` and any Unicum dev bootstrap.
@@ -70,9 +81,9 @@ npm --prefix tools/flags run build
 npm --prefix tools/badges ci --no-audit --no-fund
 npm --prefix tools/badges run icon
 python tools/build_as3.py --game "C:/Games/World_of_Tanks_EU"
-python tools/build_release.py --version 0.9.15 --python27 "C:/Python27/python.exe" --game "C:/Games/World_of_Tanks_EU"
+python tools/build_release.py --version 0.9.16 --python27 "C:/Python27/python.exe" --game "C:/Games/World_of_Tanks_EU"
 & "C:/Python27/python.exe" -B tools/selftest.py
-& "C:/Python27/python.exe" -B tools/release_check.py dist/gg.unicum_0.9.15.wotmod
+& "C:/Python27/python.exe" -B tools/release_check.py dist/gg.unicum_0.9.16.wotmod
 node tools/check_roster_grid.mjs
 node tools/check_battle_ui.mjs
 ```

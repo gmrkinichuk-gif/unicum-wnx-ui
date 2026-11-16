@@ -22,6 +22,10 @@ package unicum.markers
 
       private var _disposed:Boolean = false;
 
+      private var _layout:Function;
+
+      private var _anchorPoll:int = 0;
+
       public function NameMarkerAddon(marker:Sprite)
       {
          super();
@@ -41,6 +45,7 @@ package unicum.markers
          delete MarkersBoot.addons[this];
          this.removeView();
          this._calls = {};
+         this._layout = null;
          this._player = null;
          this._vehicle = null;
          this._marker = null;
@@ -69,6 +74,8 @@ package unicum.markers
             return;
          }
          this._marker.addChild(this._view);
+         try { this._layout = Object(this._view)["layout"] as Function; }
+         catch(error:Error) { this._layout = null; }
          this._view.addEventListener(Event.ENTER_FRAME, this.onFrame);
          this.anchors();
          for(var name:String in this._calls)
@@ -91,9 +98,23 @@ package unicum.markers
 
       private function onFrame(event:Event) : void
       {
-         if(this.nameField() != this._player || this.vehicleField() != this._vehicle)
-            this.anchors();
-         this.forward("layout", []);
+         // Symbols normally keep the same fields for the marker's lifetime.
+         // Recheck often enough to catch a client mode rebuild, without two
+         // dynamic property lookups for every marker on every frame.
+         this._anchorPoll++;
+         if(this._anchorPoll >= 6 || this._player == null || this._vehicle == null)
+         {
+            this._anchorPoll = 0;
+            if(this.nameField() != this._player || this.vehicleField() != this._vehicle)
+               this.anchors();
+         }
+         try
+         {
+            if(this._layout != null) this._layout.call(this._view);
+         }
+         catch(error:Error)
+         {
+         }
       }
 
       private var _player:TextField;
@@ -131,6 +152,8 @@ package unicum.markers
                this._view.parent.removeChild(this._view);
             }
             this._view = null;
+            this._layout = null;
+            this._anchorPoll = 0;
          }
       }
 

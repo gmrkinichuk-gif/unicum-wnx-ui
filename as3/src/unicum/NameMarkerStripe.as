@@ -40,9 +40,12 @@ package unicum
             return;
          }
          var other:TextField = field == player ? vehicle : player;
+         // Position depends on geometry and visible text, not on the field's
+         // full HTML markup or the marker's global motion. Avoid serialising
+         // both rich-text fields on every frame for every vehicle.
          var token:String = [field.x,field.y,field.width,field.height,field.scaleX,field.scaleY,field.textWidth,field.textHeight,
-            field.rotation,field.htmlText,parent.x,parent.y,parent.scaleX,parent.scaleY,color,
-            other != null ? [other.x,other.y,other.width,other.height,other.visible,other.htmlText,other.textWidth,other.textHeight].join(":") : "",
+            field.rotation,field.text,color,
+            other != null ? [other.x,other.y,other.width,other.height,other.visible,other.text,other.textWidth,other.textHeight].join(":") : "",
             obstacle != null ? [obstacle.x,obstacle.y,obstacle.width,obstacle.height,obstacle.visible].join(":") : "",
             health != null ? [health.x,health.y,health.width,health.height,health.visible].join(":") : ""].join(":");
          if(this._field == field && this._host == parent && this._health == health &&

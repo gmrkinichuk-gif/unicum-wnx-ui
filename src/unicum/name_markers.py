@@ -70,12 +70,18 @@ class NameMarkers(object):
         self._flags = battle_flags
         self._view_stamp = _view_mtime()
         self._managers = weakref.WeakSet()
+        # account -> (the immutable cache Entry object, scale refresh stamp,
+        # ready-to-send base payload). Alt and team visibility are deliberately
+        # not cached: they select the last colour on every sync and remain
+        # instant. API refreshes replace Entry objects in Lookup.
+        self._payloads = {}
 
     def install(self):
         self._session.patch(MarkersManager, 'createExternalComponent', self._wrap_component)
         self._session.patch(MarkersManager, 'createMarker', self._wrap_create)
         self._session.patch(MarkersManager, 'destroyMarker', self._wrap_destroy)
         self._session.repeat(_SYNC_SECONDS, self._sync)
+        self._flags._settings.on_change(self._clear_payloads)
         if self._flags.alt is not None:
             self._flags.alt.on_change(self._sync)
         try:
@@ -161,14 +167,34 @@ class NameMarkers(object):
             vInfo = arena.getVehicleInfo(vehicle_id) if arena is not None else None
             shown = (vInfo is not None and shows(vInfo.team) and waits_for_nothing
                      and self._flags._settings.shows('battle'))
-            entry = self._entry(vInfo.player.accountDBID if shown else None)
-            # Keep disabled/team-filtered markers distinct from missing WNX:
-            # the latter now has the neutral grey accent in the AS3 view.
-            data = (self._text(entry), _TEXT_COLOR, self._images(entry),
-                    self._wnx_color(entry) if shown else -2)
+            account_id = vInfo.player.accountDBID if shown else None
+            if account_id:
+                base = self._payload(account_id)
+                # Keep disabled/team-filtered markers distinct from missing
+                # WNX: the latter has the neutral grey accent in the AS3 view.
+                data = base[:3] + (base[3],)
+            else:
+                data = ('', _TEXT_COLOR, '', -2)
             if sent.get(marker_id) != data:
                 manager.invokeMarker(marker_id, 'setUnicumData', *data)
                 sent[marker_id] = data
+
+    def _payload(self, account_id):
+        entry = self._entry(account_id)
+        scales = getattr(self._flags._badges, '_scales', self._flags._badges)
+        stamp = getattr(scales, '_fetched_at', None)
+        cached = getattr(self, '_payloads', {}).get(account_id)
+        if cached is not None and cached[0] is entry and cached[1] == stamp:
+            return cached[2]
+        payload = (self._text(entry), _TEXT_COLOR, self._images(entry),
+                   self._wnx_color(entry))
+        if not hasattr(self, '_payloads'):
+            self._payloads = {}
+        self._payloads[account_id] = (entry, stamp, payload)
+        return payload
+
+    def _clear_payloads(self):
+        self._payloads.clear()
 
     def _reload_view_if_changed(self, manager, ours):
         stamp = _view_mtime()

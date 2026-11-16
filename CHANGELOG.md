@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.16
+
+- Stop unchanged Tab rows from rewriting canonicalised inline colours every 200 ms; batch native Live Tags layout reads after row updates
+- Cache unchanged overhead-marker geometry and reduce dynamic marker-field lookups without changing Alt, HP or vehicle-icon placement
+- Reuse each account's prepared overhead-marker payload until its API entry, colour scale or display settings change
+- Skip retained hidden Scaleform loading and legacy Tab branches while keeping visible players panels and loading rows on the existing 20 Hz refresh
+- Add steady-state CSS-write, hidden-branch and marker-cache regression checks
+
+- Document the 20–150 s replay comparison: mean FPS 69.58 to 70.42, median 70 to 71, P10 sampled FPS 66 to 69, and Python game-thread time 2.40% to 0.96%; retain the lower isolated minimum (52 to 45 FPS) and measurement limitations
+- Record validation results and existing teardown/API-check limitations in docs/PERFORMANCE_0.9.16.md
+
 ## Publication preparation - 2026-11-16
 
 - Prepare the independent Unicum WNX UI source repository without changing the

@@ -16,7 +16,7 @@ let visible = false;
 let modelCount = '';
 let lastError = '';
 
-function log(message) { try { report(`roster 0.9.15: ${message}`); } catch (error) {} }
+function log(message) { try { report(`roster 0.9.16: ${message}`); } catch (error) {} }
 function connected(node) { return document.documentElement.contains(node); }
 log('script created');
 
@@ -27,14 +27,24 @@ function css(node, key, value) {
   // Coherent exposes getPropertyValue but not getPropertyPriority in 2.4.1.1.
   // Priority is optional restore metadata, never a rendering prerequisite.
   if (!saved.has(key)) saved.set(key, [node.style.getPropertyValue(key),
-    typeof node.style.getPropertyPriority === 'function' ? node.style.getPropertyPriority(key) : '']);
-  if (node.style.getPropertyValue(key) !== value) node.style.setProperty(key, value);
+    typeof node.style.getPropertyPriority === 'function' ? node.style.getPropertyPriority(key) : '', null, null]);
+  const state = saved.get(key);
+  const current = node.style.getPropertyValue(key);
+  // Coherent canonicalises colours and gradients (for example #7a4fb2 to
+  // rgb(122, 79, 178)). Comparing that canonical value with our source text
+  // made every 200 ms pass write every row again. Remember both forms, while
+  // still repairing a later native/client overwrite of the same property.
+  if (state[2] !== value || state[3] !== current) {
+    node.style.setProperty(key, value);
+    state[2] = value;
+    state[3] = node.style.getPropertyValue(key);
+  }
 }
 function mark(node, name) {
   if (!node) return;
   if (!classes.has(node)) classes.set(node, new Set());
   classes.get(node).add(name);
-  node.classList.add(name);
+  if (!node.classList.contains(name)) node.classList.add(name);
 }
 function filteredMark(root, selector, name, excluded) {
   // Coherent 2.4.1.1 rejects CSS negation selectors. Preserve the original
@@ -120,7 +130,8 @@ function decorate(row, side) {
   // node. The native row's contour, vehicle and status columns stay intact.
   const user = row.querySelector('[class*="UserInfo_user_info_"]');
   if (user && entry.block.parentElement !== user) user.appendChild(entry.block);
-  entry.block.style.display = data.shown ? '' : 'none';
+  const display = data.shown ? '' : 'none';
+  if (entry.block.style.display !== display) entry.block.style.display = display;
   const values = statsOf(player);
   for (let i = 0; i < 3; i++) text(entry.block.children[i], values[i] || '');
   const nickWrap = row.querySelector('[class*="UserInfo_nickname_wrapper_"]');
@@ -152,9 +163,12 @@ function average(header, side) {
   if (!rating) { if (node) node.remove(); return; }
   if (!node) { node = document.createElement('span'); node.className = 'unicum-roster-average'; header.appendChild(node); }
   const image = rating.image;
-  node.style.backgroundImage = image ? `url(${image})` : '';
-  node.style.width = image ? `${rating.width}rem` : '';
-  node.style.height = image ? `${rating.height}rem` : '';
+  const background = image ? `url(${image})` : '';
+  const width = image ? `${rating.width}rem` : '';
+  const height = image ? `${rating.height}rem` : '';
+  if (node.style.backgroundImage !== background) node.style.backgroundImage = background;
+  if (node.style.width !== width) node.style.width = width;
+  if (node.style.height !== height) node.style.height = height;
   text(node, image ? '' : wnx(rating.value));
 }
 function render() {
@@ -184,6 +198,7 @@ function render() {
   let matched = 0;
   let liveCount = 0;
   let liveVisible = 0;
+  const liveNodes = [];
   const active = new Set();
   for (const [index, side] of ['allies', 'enemies'].entries()) {
     const team = view.querySelector(`[class*="FullStatsApp_${side}_"]`);
@@ -196,12 +211,16 @@ function render() {
       active.add(row);
       matched += decorate(row, side);
       const entry = rows.get(row);
-      if (entry && entry.live) { liveCount++; if (entry.live.getBoundingClientRect().height > 0) liveVisible++; }
+      if (entry && entry.live) { liveCount++; liveNodes.push(entry.live); }
     }
     average(heading, side);
   }
   for (const row of rows.keys()) if (!active.has(row) || !connected(row)) { removeRow(row); restore(row); }
   for (const node of classes.keys()) if (!connected(node)) { owned.delete(node); classes.delete(node); }
+  // Batch layout reads after all row writes. Interleaving a rect read with
+  // decoration of the next row forced Coherent to recalculate layout once
+  // per ally row while Tab was open.
+  for (const node of liveNodes) if (node.getBoundingClientRect().height > 0) liveVisible++;
   const counts = `${active.size} rows, ${matched} WNX matches, native Live Tags ${liveVisible}/${liveCount} visible`;
   if (counts !== told) { told = counts; log(`rendered: ${counts}`); }
 }
