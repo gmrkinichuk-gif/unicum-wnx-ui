@@ -42,7 +42,9 @@ jobs:
           node tools/check_roster_grid.mjs
           node tools/check_battle_ui.mjs
       - name: Compile with mirrored client inputs (never distribute)
-        run: python tools/build_as3.py --from-mirror
+        # The initial run timed out after 35 minutes without output. Cap this
+        # dependency/compile step separately and stream Python progress logs.
+        run: timeout --signal=TERM --kill-after=30s 1080s python -u tools/build_as3.py --from-mirror
       - name: Build and check temporary package (never publish)
         shell: bash
         run: |
