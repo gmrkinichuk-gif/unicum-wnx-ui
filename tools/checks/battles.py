@@ -746,8 +746,8 @@ def check_battle_setting():
     # box off, before it was removed, is sending again: the value left in
     # their settings.json is ignored rather than honoured.
     check('there is no setting that stops sending battles', 'sendBattles' not in DEFAULTS)
-    check('an old settings.json that turned them off is not honoured',
-          'sendBattles' not in validate({'sendBattles': False})
+    check('an old sendBattles key is preserved but has no effect on reporting',
+          validate({'sendBattles': False})['sendBattles'] is False
           and _sends(validate({'sendBattles': False})) is True)
     check('the window has no such box either',
           'sendBattles' not in to_window(validate({}))

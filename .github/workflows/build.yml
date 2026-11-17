@@ -41,6 +41,7 @@ jobs:
         run: |
           node tools/check_roster_grid.mjs
           node tools/check_battle_ui.mjs
+          node tools/check_settings_ui.mjs
       - name: Compile with mirrored client inputs (never distribute)
         # The initial run timed out after 35 minutes without output. Cap this
         # dependency/compile step separately and stream Python progress logs.
@@ -50,7 +51,7 @@ jobs:
         run: |
           set -eu
           chmod +x tools/ci/python27
-          version=$(sed -nE 's/^## ([0-9]+\.[0-9]+\.[0-9]+)$/\1/p' CHANGELOG.md | head -1)
+          version=$(sed -nE 's/^## ([0-9]+\.[0-9]+\.[0-9]+(-dev\.[0-9]+)?)$/\1/p' CHANGELOG.md | head -1)
           test -n "$version"
           python tools/build_release.py --version "$version" --python27 tools/ci/python27 --game-version 0.0.0.0
           tools/ci/python27 -B tools/selftest.py

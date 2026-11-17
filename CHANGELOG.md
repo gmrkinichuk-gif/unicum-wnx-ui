@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.18-dev.1
+
+- Fix blank modsSettingsApi windows: keep values for button-backed labels when replacing API settings
+- Add validated loading, panel, Tab and overhead-marker controls under `wnxUI`, with matching native and optional API pages
+- Add a saved English/Ukrainian settings-language selector, translated controls/tooltips and Reset confirmation
+- Preserve independent team-average choices through both settings backends
+- Add Alt statistic selection, optional transitions and 50-300 ms duration; retain all native panel modes and Full-mode vehicle text
+- Expose the master switch and Twitch channel in the native settings tab; confirm Reset and discard stale drafts
+- Preserve unknown/legacy configuration keys, use Session-owned menu callbacks and open the native tab without optional settings APIs
+- Add Python 2.7, installed-API bytecode and actual AS3-body regression checks; keep 0.9.16 as the verified baseline
+- Development candidate only; live-client acceptance is recorded separately in `docs/IN_GAME_SETTINGS.md`
+
 ## 0.9.17
 
 - Avoid repeated assignments to unchanged Scaleform roster text geometry and formatting properties

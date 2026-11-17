@@ -31,6 +31,9 @@ package unicum
       public static function statistics(row:Object, marker:Array) : String
       {
          if(marker == null) return "\u2014";
+         if(RosterOptions.altStats >= 1 && RosterOptions.altStats <= 3)
+            return String(marker[10 + RosterOptions.altStats] || "\u2014");
+         if(RosterOptions.altStats == 4) return marker.hasStats ? marker.statsLine : "\u2014";
          try
          {
             var full:Boolean = int(row.state) == PLAYERS_PANEL_STATE.FULL ||

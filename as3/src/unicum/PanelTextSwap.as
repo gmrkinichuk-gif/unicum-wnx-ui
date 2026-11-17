@@ -179,7 +179,8 @@ package unicum
 
       private function advance(state:Object, now:int) : void
       {
-         state.position = PanelFlip.step(state.position, state.target, now - state.last);
+         state.position = RosterOptions.animation ?
+            PanelFlip.step(state.position, state.target, now - state.last, RosterOptions.duration) : state.target;
          state.last = now;
       }
 

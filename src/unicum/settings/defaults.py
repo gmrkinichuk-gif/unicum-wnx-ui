@@ -9,6 +9,7 @@ from __future__ import absolute_import
 import logging
 import os
 import re
+from unicum.settings.wnx import DEFAULTS as WNX_DEFAULTS
 
 _logger = logging.getLogger('unicum.settings.defaults')
 
@@ -95,6 +96,8 @@ def _surface(surface):
     return values
 
 DEFAULTS = dict({
+    'wnxUI': WNX_DEFAULTS,
+    'settingsLanguage': 'en',
     'enabled': True,
     'metric': 'wnx',
     'window': 'recent',

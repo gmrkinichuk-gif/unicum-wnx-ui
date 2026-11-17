@@ -98,6 +98,7 @@ package unicum
       public var rosterRedesignEnabled:Boolean = false;
 
       public var rosterStatsEnabled:Boolean = false;
+      public var rosterOptions:String = "";
 
       // The unicum.gg tab of the settings window, opened from the battle's menu.
       private var _settingsTabs:SettingsTabs;
@@ -121,6 +122,10 @@ package unicum
       public function takeSettingsTabOut() : String
       {
          return SettingsTab.take();
+      }
+      public function resetSettingsTab() : void
+      {
+         SettingsTab.discardDraft();
       }
 
       public function takePanelMetrics() : String
@@ -287,6 +292,7 @@ package unicum
       private function onFrame(event:Event) : void
       {
          this.rescan();
+         if(RosterOptions.read(this.rosterOptions)) this._markers.optionsChanged();
          this._markers.update(this.markersText, this.leftIds, this.rightIds, this._names, this.panelHidden,
                               this.tabHidden, this.loadingHidden, this.colorNamesByWnx,
                               this.colorClanTagsByWnx, this.colorVehiclesByWnx,

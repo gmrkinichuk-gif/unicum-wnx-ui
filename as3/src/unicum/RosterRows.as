@@ -113,7 +113,7 @@ package unicum
             if(tf.text != value) tf.text = value;
             if(tf.x != cells.statsX + i * 42) tf.x = cells.statsX + i * 42;
             if(tf.y != icon.y + 2) tf.y = icon.y + 2;
-            tf.visible = showStats && icon.visible && name.visible;
+            tf.visible = showStats && RosterOptions.loadingStats[i] && icon.visible && name.visible;
          }
          return true;
       }
@@ -203,20 +203,30 @@ package unicum
          if(!compact) for each(var stat:TextField in state.stats) if(stat.parent != parent) parent.addChild(stat);
          var band:String = marker != null && marker.length > 10 ? String(marker[10]) : "";
          var color:uint = /^#[0-9a-f]{6}$/i.test(band) ? uint(parseInt(band.substr(1),16)) : 0x666b73;
-         var signature:String = [bounds.x,bounds.y,bounds.width,bounds.height,color,compact,stripeRight].join(":");
+         var background:Boolean = compact ? RosterOptions.panelBackground : RosterOptions.loadingBackground;
+         var stripe:Boolean = compact ? RosterOptions.panelStripe : RosterOptions.loadingStripe;
+         var opacity:Number = compact ? RosterOptions.panelOpacity : RosterOptions.loadingOpacity;
+         var signature:String = [bounds.x,bounds.y,bounds.width,bounds.height,color,compact,stripeRight,
+                                 background,stripe,opacity].join(":");
          if(state.signature != signature)
          {
             var bgSprite:Sprite = state.bg as Sprite;
             bgSprite.graphics.clear();
-            bgSprite.graphics.beginFill(0x10141b, compact ? 0.90 : 0.96);
+            if(background)
+            {
+            bgSprite.graphics.beginFill(0x10141b, (compact ? 0.90 : 0.96) * opacity / (compact ? 0.4 : 0.5));
             bgSprite.graphics.drawRect(bounds.x,bounds.y,bounds.width,bounds.height);
             bgSprite.graphics.endFill();
-            bgSprite.graphics.beginFill(color, compact ? 0.40 : 0.50);
+            bgSprite.graphics.beginFill(color, opacity);
             bgSprite.graphics.drawRect(bounds.x,bounds.y,bounds.width,bounds.height);
             bgSprite.graphics.endFill();
+            }
+            if(stripe)
+            {
             bgSprite.graphics.beginFill(color,1);
             bgSprite.graphics.drawRect(RosterGrid.stripe(bounds.left,bounds.right,stripeRight),bounds.y,3,bounds.height);
             bgSprite.graphics.endFill();
+            }
             state.signature = signature;
          }
          state.bg.visible = icon.visible;

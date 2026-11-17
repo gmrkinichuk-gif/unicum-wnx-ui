@@ -271,6 +271,8 @@ class TabScreen(object):
                 'colorNamesByWnx': self._settings['colorNamesByWnx'],
                 'colorClanTagsByWnx': self._settings['colorClanTagsByWnx'],
                 'colorVehiclesByWnx': self._settings['colorVehiclesByWnx']}
+        from unicum.settings.wnx import options
+        data['wnxUI'] = options(self._settings)['tab']
         # The same wait the players panel honours: a player who asked for
         # these numbers only while the extended info key is held gets them
         # only then, on this screen too.
@@ -282,7 +284,13 @@ class TabScreen(object):
             wanted = []
             values = {'allies': [], 'enemies': []}
             window = self._settings.window_of('wnx')
+            from unicum import modes
+            mode = modes.current_mode()
             for names, account_id, ally in self._roster():
+                if mode is not None and not self._settings.shows_team(mode, ally):
+                    for name in names:
+                        data['players'][name] = {'wnxAvailable': False, 'filtered': True}
+                    continue
                 if self._lookup.needs_fetch(PLAYERS, account_id):
                     wanted.append(account_id)
                     for name in names:

@@ -228,6 +228,12 @@ package unicum
       // names: team name field -> [the text the client set, the text once
       // shown as HTML], kept by TeamNamesHtml, since a name already shown as
       // HTML no longer reads back its average's tag.
+      public function optionsChanged() : void
+      {
+         this._swaps.cancel();
+         this._revision++;
+      }
+
       public function update(markers:String, left:String, right:String, names:Dictionary,
                              panelHidden:Boolean = false, tabHidden:Boolean = false,
                              loadingHidden:Boolean = false, colorNames:Boolean = false,

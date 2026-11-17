@@ -239,9 +239,13 @@ class NameMarkers(object):
     def _wnx_color(self, entry):
         """The original WNX band, independent of the legacy badge metric."""
         from unicum.roster import wnx_data
+        from unicum.settings.wnx import options
+        markers = options(self._flags._settings)['markers']
+        if not markers['stripe']:
+            return -2
         value, data = wnx_data(entry, self._flags._settings.window_of('wnx'), self._flags._badges)
         color = data.get('bandColor')
-        return int(color[1:], 16) if color else -1
+        return int(color[1:], 16) if color else (-1 if markers['missing'] == 'neutral' else -2)
 
     def _text(self, entry):
         """The rating then the flags' codes, as plain text, or ''."""

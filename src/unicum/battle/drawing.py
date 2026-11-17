@@ -21,8 +21,7 @@ from unicum.roster import marker_text, native_name_fields
 
 _logger = logging.getLogger('unicum.battle.drawing')
 
-# The battle view's surfaces that can wait for Alt, in the order of its
-# panelHidden, tabHidden and loadingHidden properties.
+# The battle view's surfaces, in panelHidden/tabHidden/loadingHidden order.
 _ALT_SURFACES = ('panel', 'tab', 'loading')
 
 # The client's own method for "resend the arena's description", which is where
@@ -143,16 +142,16 @@ class Drawing(TeamNames, BattleVisibility):
             for key, ids in _default_order(arena).items():
                 if key not in self._received:
                     self._order[key] = ids
-        # The client's Scaleform has no JSON to parse with.
         state = (marker_text(self._markers),
                  ','.join(str(i) for i in self._order['leftItemsIDs']),
                  ','.join(str(i) for i in self._order['rightItemsIDs']))
         held = self.alt is not None and self.alt.down
-        # Panel pills follow the native key independently of Tab/loading.
         panel_badges_visible = held
         hidden = tuple(self._settings.alt_only(surface) and not held for surface in _ALT_SURFACES)
         state = state + hidden + (color_names, color_clan_tags, color_vehicles, show_badges,
                                   panel_badges_visible, self._settings['enabled'], self._settings.shows('battle'))
+        from unicum.settings.wnx import flash_options
+        state += (flash_options(self._settings),)
         if self._published is not None and self._published[0] is view and self._published[1] == state:
             return
         first = self._published is None
@@ -199,6 +198,7 @@ class Drawing(TeamNames, BattleVisibility):
             view.panelWnxBadgesVisible = panel_badges_visible
             view.rosterRedesignEnabled = self._settings['enabled']
             view.rosterStatsEnabled = self._settings.shows('battle')
+            view.rosterOptions = state[-1]
         except Exception:
             _logger.debug('the battle view has no WNX text colour settings yet', exc_info=True)
         if first or hidden != before:

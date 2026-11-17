@@ -10,6 +10,8 @@ package unicum.settings
    import flash.geom.Rectangle;
    import flash.text.TextField;
    import flash.text.TextFieldAutoSize;
+   import flash.text.TextFieldType;
+   import flash.text.TextFormat;
    import flash.system.ApplicationDomain;
    import flash.utils.getQualifiedClassName;
    import scaleform.clik.data.DataProvider;
@@ -239,6 +241,7 @@ package unicum.settings
          removeEventListener(Event.ENTER_FRAME, this.onRebuild);
          // Closed without Apply or OK: what was changed is dropped.
          this.memory.pending = {};
+         this.unpeek();
          this.clear();
          this._shell = null;
       }
@@ -363,6 +366,9 @@ package unicum.settings
 
       private function clear() : void
       {
+         for each(var binding:Object in this._inputs)
+            binding.field.removeEventListener(Event.CHANGE, binding.handler);
+         this._inputs = [];
          if(this._bar != null)
          {
             try
@@ -793,7 +799,7 @@ package unicum.settings
 
       private static function rowHeight(fields:Array) : int
       {
-         if(fields[0] == "dropdown")
+         if(fields[0] == "dropdown" || fields[0] == "input")
          {
             return DROPDOWN_ROW;
          }
@@ -859,6 +865,11 @@ package unicum.settings
          {
             this.label(fields[2], x + 3, y - 2);
             this.dropdown(fields[1], int(fields[3]), int(fields[4]), String(fields[5]).split("|"), x + 1, y + 13);
+         }
+         else if(kind == "input")
+         {
+            this.label(fields[2], x + 3, y - 2);
+            this.input(fields[1], fields[3], x + 1, y + 16);
          }
          else if(kind == "checkbox")
          {
@@ -953,6 +964,35 @@ package unicum.settings
          });
          this._content.addChild(DisplayObject(menu));
          menu.validateNow();
+      }
+
+      private var _inputs:Array = [];
+
+      private function input(key:String, value:String, x:int, y:int) : void
+      {
+         var field:TextField = new TextField();
+         field.type = TextFieldType.INPUT;
+         field.defaultTextFormat = new TextFormat("$TextFont", 13, 0xc4c1b5);
+         field.width = 220;
+         field.height = 24;
+         field.background = true;
+         field.backgroundColor = 0x17150f;
+         field.border = true;
+         field.borderColor = 0x58584b;
+         field.restrict = "a-zA-Z0-9_";
+         field.maxChars = 25;
+         var wanted:String = this.pending(key);
+         field.text = wanted != null ? wanted : value;
+         field.x = x;
+         field.y = y;
+         var self:SettingsTabView = this;
+         var handler:Function = function(event:Event):void
+         {
+            self.change(key, "s", field.text);
+         };
+         field.addEventListener(Event.CHANGE, handler);
+         this._inputs.push({field:field, handler:handler});
+         this._content.addChild(field);
       }
 
       private function checkbox(key:String, title:String, selected:Boolean, x:int, y:int) : void

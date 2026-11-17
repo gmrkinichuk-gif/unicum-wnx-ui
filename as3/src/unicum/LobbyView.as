@@ -145,6 +145,15 @@ package unicum
       // once and answers with that value ever after, so anything the tab sent
       // later would pile up unread. The call hands the lines over and leaves
       // none behind.
+      public function openSettingsTab() : void
+      {
+         SettingsTabs.requested = true;
+      }
+      public function resetSettingsTab() : void
+      {
+         SettingsTab.discardDraft();
+      }
+
       public function takeSettingsTabOut() : String
       {
          return SettingsTab.take();

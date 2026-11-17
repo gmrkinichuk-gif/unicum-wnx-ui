@@ -16,29 +16,64 @@ from unicum.settings_window.labels import (linked_notice, CONNECT_VAR,
                                            SOURCE_VAR, SUPPORT_VAR)
 from unicum.settings_window.page import (channel_label, garage_preview_lines,
                                          native_page, preview_lines, template)
+from unicum.settings_window.localize import text as translated
 
 _logger = logging.getLogger('unicum.settings_window.window')
+
+
+def api_instance(api):
+    """1.7.1 exports the internal API directly; older builds wrapped it."""
+    if hasattr(api, 'onSettingsChanged') and hasattr(api, 'onButtonClicked'):
+        return api
+    return getattr(api, '_ModsSettingsApi__instance', None)
 
 def reset_defaults(settings):
     """Every setting back to its default, and a system message saying so."""
     from unicum.settings import DEFAULTS
+    language = settings['settingsLanguage']
     settings.update(json.loads(json.dumps(DEFAULTS)))
+    from unicum import views
+    for view in (views.lobby_view(), views.battle_view()):
+        if view is not None:
+            try:
+                view.resetSettingsTab()
+            except Exception:
+                _logger.debug('settings view cannot clear its draft', exc_info=True)
     _logger.info('the settings were put back to their defaults')
     try:
         from gui import SystemMessages
         from gui.shared.notifications import NotificationPriorityLevel
-        SystemMessages.pushMessage(u'unicum.gg: the settings are back to their defaults.',
+        SystemMessages.pushMessage(translated('unicum.gg: the settings are back to their defaults.', language),
                                    type=SystemMessages.SM_TYPE.Information,
                                    priority=NotificationPriorityLevel.MEDIUM)
     except Exception:
         _logger.debug('could not say that the settings were reset', exc_info=True)
 
-def handle_button(var, settings, content):
+def handle_button(var, settings, content, session=None):
     """What a button of either page does, apart from Twitch's Connect."""
     if var == RESET_VAR:
-        reset_defaults(settings)
+        confirm_reset(settings, session)
         return True
     return open_link(var, content)
+
+
+def confirm_reset(settings, session):
+    """Use the client's confirmation dialog; never reset after teardown."""
+    try:
+        from gui import DialogsInterface
+        from gui.Scaleform.daapi.view.dialogs import SimpleDialogMeta, ConfirmDialogButtons
+
+        def answered(confirmed):
+            if confirmed and session is not None and session.alive:
+                reset_defaults(settings)
+
+        language = settings['settingsLanguage']
+        DialogsInterface.showDialog(SimpleDialogMeta(
+            translated('Reset unicum.gg settings?', language),
+            translated('Restore all unicum.gg options to their defaults and save them?', language),
+            ConfirmDialogButtons(translated('Reset', language), translated('Cancel', language))), answered)
+    except Exception:
+        _logger.exception('could not show the reset confirmation; settings unchanged')
 
 def link_url(var, content):
     """Where a link button goes, or None for a variable that is not one."""
@@ -81,11 +116,11 @@ class SettingsWindow(object):
         try:
             from gui.modsSettingsApi import g_modsSettingsApi
         except ImportError:
-            _logger.info('modsSettingsApi not installed, settings.json only')
+            _logger.info('modsSettingsApi not installed; use the native unicum.gg settings tab')
             return
         self._api = g_modsSettingsApi
-        self._register()
         self._session.on_close(self._remove)
+        self._register()
         self._settings.on_change(self._on_settings)
         _logger.info('registered in modsSettingsApi as %s', LINKAGE)
 
@@ -144,17 +179,24 @@ class SettingsWindow(object):
     def _register(self):
         (channel, writable, linked, name, card_shown, supporter, hidden,
          battles_hidden, _drawn, _garage_drawn) = self._state
-        self._api.setModTemplate(LINKAGE, template(self._settings.values(), channel, writable, card_shown,
+        self._language = self._settings['settingsLanguage']
+        described = template(self._settings.values(), channel, writable, card_shown,
                                                    supporter, hidden, battles_hidden,
-                                                   drawing=self._drawing),
+                                                   drawing=self._drawing)
+        values = to_window(self._settings.values(), card_shown, hidden, battles_hidden)
+        fields = [row['varName'] for column in ('column1', 'column2')
+                  for row in described.get(column, []) if 'varName' in row]
+        missing = sorted(set(fields) - set(values))
+        if missing:
+            raise ValueError('settings template has no value for: %s' % ', '.join(missing))
+        self._api.setModTemplate(LINKAGE, described,
                                  self._on_window, self._on_button)
         # The API keeps its own copy of every value and sends it back as the
         # player's choice. For the card that copy can be stale (the card's
         # cross changes the truth without going through the window), and an
         # old "shown" coming back would undo the cross: so it is set to the
         # truth first.
-        self._api.updateModSettings(LINKAGE, to_window(self._settings.values(), card_shown, hidden,
-                                                       battles_hidden))
+        self._api.updateModSettings(LINKAGE, values)
 
     def _on_window(self, linkage, raw):
         if not self._alive or linkage != LINKAGE or not isinstance(raw, dict):
@@ -164,7 +206,7 @@ class SettingsWindow(object):
     def _on_button(self, linkage, var_name, value=None):
         if not self._alive or linkage != LINKAGE:
             return
-        if handle_button(var_name, self._settings, 'mods-list'):
+        if handle_button(var_name, self._settings, 'mods-list', self._session):
             return
         if self._link is not None and var_name == CONNECT_VAR:
             self._link.connect(linked_notice)
@@ -176,15 +218,25 @@ class SettingsWindow(object):
         # goes out at its truth. Left to their defaults, the two hiding boxes
         # went out unticked and that answer read as a player asking for what
         # they had hidden to be shown again.
+        if not self._alive:
+            return
+        if self._language != self._settings['settingsLanguage']:
+            self._unregister()
+            self._register()
+            return
         self._api.updateModSettings(LINKAGE, to_window(self._settings.values(), self._card_shown(),
                                                        self._hidden(), self._battles_hidden()))
 
     def _remove(self):
         self._alive = False
         self._unregister()
+        instance = api_instance(self._api)
+        if instance is not None:
+            instance.activeMods.discard(LINKAGE)
+            instance.state.get('templates', {}).pop(LINKAGE, None)
 
     def _unregister(self):
-        instance = getattr(self._api, '_ModsSettingsApi__instance', None)
+        instance = api_instance(self._api)
         for name, handler in (('onSettingsChanged', self._on_window), ('onButtonClicked', self._on_button)):
             event = getattr(instance, name, None)
             try:

@@ -31,6 +31,10 @@ backoff and native-client integration constraints.
   package and virtual-resource check outside the game.
 - `node tools/check_roster_grid.mjs`: mirrored AS3 layout fixtures.
 - `node tools/check_battle_ui.mjs`: actual AS3 method bodies with display fixtures.
+- `node tools/check_settings_ui.mjs`: actual AS3 setting consumers and Apply transport.
+- `python2.7 -B tools/check_installed_settings_api.py PATH_TO_API_WOTMOD`:
+  optional installed-API bytecode contract/lifecycle/localization check. Imports
+  no client modules and writes no API/player state.
 - `node tools/check_panel_flip.mjs --client-dump PATH`: optional check using a
   developer-supplied `_gui_battle_abc.txt` dump of the matching client library.
 - `python tools/check_roster_layout.py --client-css PATH --game GAME --browser BROWSER`:

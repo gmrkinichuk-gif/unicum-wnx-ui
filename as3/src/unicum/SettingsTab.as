@@ -78,6 +78,12 @@ package unicum
       {
          return _page;
       }
+      public static function discardDraft() : void
+      {
+         _memory.pending = {};
+         out.push("peek\t\t\t");
+         for each(var tab:SettingsTab in _live) tab.notify();
+      }
 
       public function get memory() : Object
       {
@@ -134,6 +140,7 @@ package unicum
             this._view = new view();
             addChild(DisplayObject(this._view));
             this._view.start(this);
+            this.send("log\tl\tsettings SWF started, page characters=" + _page.length);
          }
          catch(e:Error)
          {
@@ -148,6 +155,7 @@ package unicum
 
       private function say(text:String) : void
       {
+         this.send("log\tl\t" + text);
          var field:TextField = new TextField();
          field.autoSize = TextFieldAutoSize.LEFT;
          field.selectable = false;

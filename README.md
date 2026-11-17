@@ -73,6 +73,12 @@ installed locally and used in a live battle; full UI regression validation of
 
 Settings are created in `mods/configs/unicum/settings.json`; the default metric
 is `wnx`. modsSettingsApi and modsListApi are optional integrations.
+The `0.9.18-dev.1` candidate adds WNX display controls and a saved
+**English / Українська** selector in the native **unicum.gg** settings tab and
+optional API page. See [in-game settings](docs/IN_GAME_SETTINGS.md) for the
+configuration schema, root cause and validation limits; 0.9.16 remains the
+verified baseline.
+
 To remove the mod, close the client and remove its `gg.unicum_*.wotmod`.
 Keep shared openwg_gameface if another installed mod uses it. Restore the backed
 up mod to roll back. Account links, settings and caches live outside this repo.
