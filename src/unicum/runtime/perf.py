@@ -20,6 +20,7 @@ rate is halved is a real answer, not a failed measurement.
 import logging
 import sys
 import time
+from collections import deque
 
 _logger = logging.getLogger('unicum.perf')
 
@@ -38,6 +39,12 @@ _on = False
 # {name: [calls, total seconds, worst seconds]}
 _totals = {}
 
+# Keep only primitive values, never frames, tracebacks or engine objects.
+# Delayed batch logging avoids turning a stall into synchronous log I/O.
+_spikes = deque(maxlen=64)
+_slow_calls = 0
+_SLOW_SECONDS = 0.016
+
 # When the current measurement started, so a report can give a share of the
 # wall clock rather than a bare total nobody can size.
 _since = 0.0
@@ -51,6 +58,7 @@ def start():
     """Begin measuring, discarding whatever an earlier run left."""
     global _on, _since
     _totals.clear()
+    _reset_spikes()
     _since = _now()
     _on = True
     _logger.info('measuring what the mod costs the game thread')
@@ -64,7 +72,14 @@ def stop():
 def clear():
     global _since
     _totals.clear()
+    _reset_spikes()
     _since = _now()
+
+
+def _reset_spikes():
+    global _slow_calls
+    _spikes.clear()
+    _slow_calls = 0
 
 
 def track(name, func):
@@ -77,6 +92,7 @@ def track(name, func):
     """
 
     def measured(*args, **kwargs):
+        global _slow_calls
         if not _on:
             return func(*args, **kwargs)
         started = _now()
@@ -84,6 +100,9 @@ def track(name, func):
             return func(*args, **kwargs)
         finally:
             spent = _now() - started
+            if spent >= _SLOW_SECONDS:
+                _slow_calls += 1
+                _spikes.append((time.time(), name, spent * 1000.0))
             entry = _totals.get(name)
             if entry is None:
                 _totals[name] = [1, spent, spent]
@@ -136,3 +155,9 @@ def report(limit=15):
         _logger.info('  %-46s %8d %10.2f %9.2f %9.3f', name[:46], calls, total, worst, per_second)
     if len(measured) > limit:
         _logger.info('  ... and %d more', len(measured) - limit)
+    if _slow_calls:
+        _logger.info('slow mod calls >=16 ms: %d; retained %d; showing latest 8 '
+                     '(inclusive hook time, not GPU/frame time)', _slow_calls, len(_spikes))
+        for stamp, name, milliseconds in list(_spikes)[-8:]:
+            _logger.info('slow-call epoch=%.6f duration_ms=%.3f name=%s',
+                         stamp, milliseconds, name)

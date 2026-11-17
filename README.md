@@ -4,7 +4,9 @@ A modified [Unicum.gg World of Tanks client mod](https://github.com/unicum-gg/un
 focused on WNX presentation in battle. This is an independent derivative,
 not an official Unicum.gg or Wargaming release.
 
-The current local modification is **0.9.16**, derived from the **0.9.0** source
+This version was developed with the assistance of ChatGPT (Codex).
+
+The current local modification is **0.9.17**, derived from the **0.9.0** source
 snapshot. These numbers come from the supplied changelogs, not the development
 bootstrap placeholders. The release builder injects the requested version into
 the compiled package. See [CHANGELOG.md](CHANGELOG.md) and [NOTICE](NOTICE).
@@ -29,6 +31,12 @@ define replacement rating thresholds. The current UI uses row/marker accents;
 the legacy `colorNamesByWnx`, `colorClanTagsByWnx` and `colorVehiclesByWnx`
 settings are high-contrast text overrides in the redesigned rosters.
 
+## Update 0.9.17
+
+Avoids redundant Scaleform text geometry/formatting writes and adds bounded,
+opt-in slow-call diagnostics. WNX data, original colour bands and API caching
+are unchanged. See [changes and live-capture limits](docs/PERFORMANCE_0.9.17.md).
+
 ## Performance update 0.9.16
 
 Unchanged Tab rows no longer repeat inline colour writes. Overhead markers cache
@@ -49,11 +57,13 @@ Never load another Unicum.gg version or the development bootstrap alongside it.
 
 ## Installation and removal
 
-Version 0.9.16 was built from the installed compatible EU client and replay-tested.
-See [performance and validation notes](docs/PERFORMANCE_0.9.16.md) for results and
-remaining limitations. Before publishing a binary release, follow the
-[in-game beta validation checklist](docs/BETA_VALIDATION.md). No GitHub Release has been published; build the installation
-ZIP as described below, then use `dist/unicum.gg_0.9.16_wot_2.4.1.1.zip`.
+Download the [0.9.17 installation ZIP](downloads/0.9.17/unicum.gg_0.9.17_wot_2.4.1.1.zip?raw=true)
+or [standalone .wotmod](downloads/0.9.17/gg.unicum_0.9.17.wotmod?raw=true).
+[Matching source archive](downloads/0.9.17/unicum_wnx_0.9.17_sources.zip?raw=true)
+and SHA-256 checksums are provided in the same directory. These are versioned
+repository downloads, not a GitHub Release. This candidate was built and
+installed locally and used in a live battle; full UI regression validation of
+0.9.17 in the client remains incomplete. Startup hitches are not claimed fixed.
 
 1. Close the client and back up existing Unicum settings and mod files.
 2. Remove the previous `gg.unicum_*.wotmod` and any Unicum dev bootstrap.
@@ -82,9 +92,9 @@ npm --prefix tools/flags run build
 npm --prefix tools/badges ci --no-audit --no-fund
 npm --prefix tools/badges run icon
 python tools/build_as3.py --game "C:/Games/World_of_Tanks_EU"
-python tools/build_release.py --version 0.9.16 --python27 "C:/Python27/python.exe" --game "C:/Games/World_of_Tanks_EU"
+python tools/build_release.py --version 0.9.17 --python27 "C:/Python27/python.exe" --game "C:/Games/World_of_Tanks_EU"
 & "C:/Python27/python.exe" -B tools/selftest.py
-& "C:/Python27/python.exe" -B tools/release_check.py dist/gg.unicum_0.9.16.wotmod
+& "C:/Python27/python.exe" -B tools/release_check.py dist/gg.unicum_0.9.17.wotmod
 node tools/check_roster_grid.mjs
 node tools/check_battle_ui.mjs
 ```

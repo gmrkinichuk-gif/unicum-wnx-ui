@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.17
+
+- Avoid repeated assignments to unchanged Scaleform roster text geometry and formatting properties
+- Add bounded, opt-in slow-call timestamps to the existing performance meter for correlation with live frame-time traces
+- Keep only the latest 64 primitive slow-call records and batch log output on the existing reporting interval
+
+- Publish versioned 0.9.17 downloads, matching sources and checksums; document live-capture limitations and ChatGPT assistance.
+
+
 ## 0.9.16
 
 - Stop unchanged Tab rows from rewriting canonicalised inline colours every 200 ms; batch native Live Tags layout reads after row updates

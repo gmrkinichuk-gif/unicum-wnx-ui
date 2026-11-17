@@ -142,6 +142,17 @@ assert.equal(displayed(branch),false,'detached roster branch is skipped');
 // body runner has no runtime type system, so model that cast result here.
 assert.equal(displayed(null),true,'legacy non-display proxy stays compatible');
 const viewDisposeArgs=body('NameMarkerView.as','dispose');
+const geometryArgs=body('RosterRows.as','setGeometry');
+const setGeometry=new Function(`return function(${geometryArgs[0]}){${geometryArgs[1]}}`)();
+let geometryWrites=0,nativeX=10,nativeWidth=120;
+const geometryField={toString:()=> 'fixture',get x(){return nativeX;},set x(v){geometryWrites++;nativeX=v;},
+  get width(){return nativeWidth;},set width(v){geometryWrites++;nativeWidth=v;}};
+const geometryOwner={_geometry:{fixture:{}}};
+for(let i=0;i<100;i++)setGeometry.call(geometryOwner,geometryField,10,120,true);
+assert.equal(geometryWrites,0,'stable roster geometry causes no redundant native writes');
+nativeX=15;nativeWidth=80;
+setGeometry.call(geometryOwner,geometryField,10,120,true);
+assert.equal(geometryWrites,2,'a real client geometry overwrite is still corrected');
 const viewSource=viewDisposeArgs[1].replace('var waiting = _images[key];','var waiting = Array.isArray(_images[key]) ? _images[key] : null;');
 const markerView={_anchor:{},_vehicleAnchor:{},_healthAnchor:{},_wanted:['asset'],_stripe:{dispose(){}},visible:true};
 const anotherView={};

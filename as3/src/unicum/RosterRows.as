@@ -111,8 +111,8 @@ package unicum
             var label:String = marker != null && marker.length > 11 + i ? String(marker[11+i]) : "";
             var value:String = label.length ? label : "\u2014";
             if(tf.text != value) tf.text = value;
-            tf.x = cells.statsX + i * 42;
-            tf.y = icon.y + 2;
+            if(tf.x != cells.statsX + i * 42) tf.x = cells.statsX + i * 42;
+            if(tf.y != icon.y + 2) tf.y = icon.y + 2;
             tf.visible = showStats && icon.visible && name.visible;
          }
          return true;
@@ -146,8 +146,8 @@ package unicum
       private function setGeometry(item:DisplayObject, x:Number, width:Number, resize:Boolean = true) : void
       {
          var saved:Object = this._geometry[item];
-         item.x = x;
-         if(resize) item.width = width;
+         if(item.x != x) item.x = x;
+         if(resize && item.width != width) item.width = width;
          saved.lastX = item.x;
          saved.lastWidth = item.width;
       }
@@ -161,10 +161,10 @@ package unicum
                                 wrap:tf.wordWrap, multiline:tf.multiline, auto:tf.autoSize};
             tf.filters = tf.filters.concat([new DropShadowFilter(1, 90, 0, 1, 1, 1, 2, 1)]);
          }
-         if(!PanelTextSwap.owns(tf)) tf.alpha = 1;
-         tf.wordWrap = false;
-         tf.multiline = false;
-         tf.autoSize = "none";
+         if(!PanelTextSwap.owns(tf) && tf.alpha != 1) tf.alpha = 1;
+         if(tf.wordWrap) tf.wordWrap = false;
+         if(tf.multiline) tf.multiline = false;
+         if(tf.autoSize != "none") tf.autoSize = "none";
       }
 
       private function draw(icon:DisplayObject, bounds:Rectangle, marker:Array, compact:Boolean,

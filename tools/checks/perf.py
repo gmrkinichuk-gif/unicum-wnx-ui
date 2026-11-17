@@ -55,6 +55,31 @@ def check_perf_meter():
         # event both need the thing that was wrapped, not the wrapper.
         check('the wrapper keeps hold of what it wraps',
               perf.track('x', check).unmeasured is check)
+        old_clock = perf._now
+        try:
+            clock = [0.0]
+            perf._now = lambda: clock[0]
+            def slow():
+                clock[0] += 0.050
+                return 'native-result'
+            perf.start()
+            timed = perf.track('slow.fixture', slow)
+            for unused in range(100):
+                result = timed()
+            check('stall diagnostics preserve callback results', result == 'native-result')
+            check('stall diagnostics count calls and bound retained memory',
+                  perf._slow_calls == 100 and len(perf._spikes) == 64)
+            check('stall records retain only time/name/duration primitives',
+                  all(isinstance(item[0], float) and isinstance(item[1], str)
+                      and abs(item[2] - 50) < 0.001 for item in perf._spikes))
+            perf.clear()
+            check('the reporting interval clears stall records',
+                  not perf._spikes and perf._slow_calls == 0)
+            perf.stop()
+            timed()
+            check('disabled diagnostics retain no stall records', not perf._spikes)
+        finally:
+            perf._now = old_clock
     finally:
         perf.stop()
         perf.clear()

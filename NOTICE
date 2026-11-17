@@ -18,7 +18,8 @@ The code remains licensed under GNU AGPL version 3. Preserve existing notices
 and supply matching Corresponding Source to binary recipients as required by
 that license. Before public binary distribution, arrange accessible matching
 source; a private repository link alone is insufficient for recipients who
-cannot access it. No public release is authorized by this source import.
+cannot access it. The maintainer authorized public distribution of version 0.9.17 on 2026-11-17.
+Matching source is supplied with the versioned downloads.
 
 Third-party components retain their licenses; see THIRD_PARTY_NOTICES.md,
 licenses/, and vendor/openwg/LICENSE-gameface. Unicum.gg, Wargaming, World of
