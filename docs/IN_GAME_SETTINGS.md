@@ -1,6 +1,6 @@
 # In-game settings development candidate
 
-`0.9.18-dev.1`, branch `feature/in-game-settings`, based on current `main`
+`0.9.18` release source (originally tested as `0.9.18-dev.1`), branch `feature/in-game-settings`, based on current `main`
 (`7435e3b`, rebased after 0.9.17 reached main during development). The verified
 0.9.16 base, upstream 0.9.17 optimizations/downloads and existing releases are
 unchanged. Local experimental archives were not used as the implementation base.
@@ -127,7 +127,11 @@ Live client observations, on the earlier English candidate before localization:
   fallback UI/persistence check could complete. The optional API and original
   stripe value were restored. Other mods were not changed.
 
-Still required before merging/releasing:
+Maintainer acceptance after the candidate checks:
+
+On 2026-11-17 the maintainer reported installing and testing the candidate in World of Tanks, including settings, battle UI, Alt and Tab, and confirmed that everything tested worked. This is user-reported live acceptance; it does not constitute captured proof of every mode/client/API combination. No new final-version binary has yet been installed or retested.
+
+Outstanding matrix / compatibility checks (not claimed complete):
 
 - Live acceptance of the final dynamic API buttons, Reset confirmation/positive
   Reset, language switching/translated layout, OK and post-restart UI persistence.
