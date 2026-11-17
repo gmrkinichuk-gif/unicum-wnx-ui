@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.18-dev.1
+## 0.9.18
 
 - Fix blank modsSettingsApi windows: keep values for button-backed labels when replacing API settings
 - Add validated loading, panel, Tab and overhead-marker controls under `wnxUI`, with matching native and optional API pages
@@ -10,7 +10,7 @@
 - Expose the master switch and Twitch channel in the native settings tab; confirm Reset and discard stale drafts
 - Preserve unknown/legacy configuration keys, use Session-owned menu callbacks and open the native tab without optional settings APIs
 - Add Python 2.7, installed-API bytecode and actual AS3-body regression checks; keep 0.9.16 as the verified baseline
-- Development candidate only; live-client acceptance is recorded separately in `docs/IN_GAME_SETTINGS.md`
+- Maintainer reports successful in-game checks of settings, battle panels, Alt and Tab on the installed development candidate; see `docs/IN_GAME_SETTINGS.md` for the remaining unverified compatibility matrix
 
 ## 0.9.17
 
