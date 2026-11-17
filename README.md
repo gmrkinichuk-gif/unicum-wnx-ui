@@ -10,7 +10,7 @@
 
 *Promotional concept artwork above; the screenshots below show the actual in-game interface.*
 
-A community-maintained, **unofficial derivative** of [Unicum.gg's World of Tanks mod](https://github.com/unicum-gg/unicum.gg-mod). This edition emphasizes WNX-coloured battle panels, streamlined statistics and practical in-game controls. It is **not** affiliated with or endorsed by Unicum.gg or Wargaming.
+A community-maintained, **unofficial derivative** of [Unicum.gg's World of Tanks mod](https://github.com/unicum-gg/unicum.gg-mod). This edition emphasizes WNX-coloured battle panels, streamlined statistics and practical in-game controls. It is **not** affiliated with or endorsed by Unicum.gg or Wargaming. The 0.9.18 release traces back to the supplied upstream 0.9.0 source snapshot; see [CHANGELOG](CHANGELOG.md) and [NOTICE](NOTICE). Development involved assistance from ChatGPT (Codex).
 
 **[Download the latest release](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/latest)** · **[0.9.18 installation ZIP](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/unicum.gg_0.9.18_wot_2.4.1.1.zip)** · **[Settings guide](docs/IN_GAME_SETTINGS.md)**
 
@@ -44,7 +44,7 @@ In the Full panel mode, the vehicle name remains visible while the nickname fiel
 
 *Actual game capture. Appearance varies with your panel mode, UI scale and settings.*
 
-## Install
+## Quick start
 
 **Current release:** [v0.9.18](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/tag/v0.9.18) for **World of Tanks EU 2.4.1.1**.
 
