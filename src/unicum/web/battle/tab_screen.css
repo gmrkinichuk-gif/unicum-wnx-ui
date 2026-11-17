@@ -54,10 +54,12 @@
 .unicum-roster-row [data-bind-value*=".hiddenUserName"],
 .unicum-roster-row [class*="UserInfo_clanTag_"],
 .unicum-roster-row [class*="Player_vehicleName_"] {
-    color: #f2f3f5 !important;
     font-size: 13rem;
     text-shadow: 0 1rem 1rem #000, 1rem 0 1rem #000;
 }
+.unicum-roster-row .unicum-text-names,
+.unicum-roster-row .unicum-text-clans,
+.unicum-roster-row .unicum-text-vehicles { color: #f2f3f5; }
 .unicum-roster-row [class*="Player_platoon_wrapper_"] { order: 0; width: 30rem !important; margin: 0 !important; }
 .unicum-roster-stats { display: flex; flex: 0 0 128rem; width: 128rem; margin: 0 2rem; color: #fff; font-size: 13rem; font-weight: 600; white-space: nowrap; text-shadow: 0 1rem 1rem #000; pointer-events: none; }
 .unicum-roster-stats > span { box-sizing: border-box; flex: 0 0 44rem; width: 44rem; text-align: center; }

@@ -92,7 +92,7 @@ EXCLUDED = {'local_settings.py'}
 # be spelled out and made this mod look harder to install than every other one
 # on the hub. Now the archive is two .wotmod files and nothing else.
 
-VERSION = re.compile(r'^\d+\.\d+\.\d+$')
+VERSION = re.compile(r'^\d+\.\d+\.\d+(?:-dev\.\d+)?$')
 
 
 def game_version(given: str | None, game: Path | None = None) -> str:
@@ -222,7 +222,7 @@ def main() -> None:
                         help="an installed client, whose paths.xml names the folder it reads")
     args = parser.parse_args()
     if not VERSION.match(args.version):
-        raise SystemExit('--version must be x.y.z')
+        raise SystemExit('--version must be x.y.z or x.y.z-dev.N')
 
     py27 = python27(args.python27)
     folder_version = game_version(args.game_version, Path(args.game) if args.game else None)

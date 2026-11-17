@@ -321,8 +321,8 @@ def check_settings_window():
               'colorVehiclesByWnx': True, 'showWnxBadges': True})))['showWnxBadges'] is True)
     check('a screen is one choice of what it shows',
           SHOW_CHOICES[window['battleShow']][0] == 'Ratings only' and 'contactsAverage' not in window)
-    check('an average goes with the ratings',
-          from_window({'battleResultsShow': 2})['battleResults'] == {'rating': False, 'flags': True, 'average': False}
+    check('screen choices preserve the independent average setting',
+          from_window({'battleResultsShow': 2})['battleResults'] == {'rating': False, 'flags': True}
           and 'average' not in from_window({'contactsShow': 0})['contacts'])
     check('and read back to the same settings', validate(dict(values, **from_window(window))) == values)
     check('an index out of range is ignored', 'metric' not in from_window({'metric': 9}))
@@ -344,7 +344,7 @@ def check_settings_window():
               and validate(dict(DEFAULTS, **sent))['battle']['figures'] == name)
     check('a figures choice rides beside what the show dropdown writes',
           from_window({'battleShow': 1, 'battleFigures': 1})['battle']
-          == {'rating': True, 'flags': False, 'average': True, 'figures': 'tank'})
+          == {'rating': True, 'flags': False, 'figures': 'tank'})
     check('and a surface that has no such choice is never sent one',
           [s for s in ('contacts', 'profile') if s not in FIGURED]
           and 'contactsFigures' not in to_window(values))
@@ -403,11 +403,13 @@ def check_settings_window():
           len(battles) == 1 and battles[0][3] == u'1')
     check('there is no box that stops sending battles',
           not any(line[1] == u'sendBattles' for line in linked if line[0] == u'checkbox'))
-    check('the settings tab has the Garage, Battle and Twitch sub-tabs',
-          [line[1] for line in lines if line[0] == u'tab'] == [u'Garage', u'Battle', u'Twitch'])
+    check('the native settings group standard and WNX options into dedicated sub-tabs',
+          [line[1] for line in lines if line[0] == u'tab'] ==
+          [u'Garage', u'Battle', u'Loading Screen', u'Battle Panels', u'Tab Scoreboard',
+           u'Vehicle Markers', u'Twitch'])
     flags = [line for line in lines if line[0] == u'dropdown' and line[1] == u'maxFlags'][0]
     check('a dropdown carries its index, its offset and its options',
-          flags[3:] == [u'1', u'1', u'1|2|3'] and len([l for l in lines if l[0] == u'dropdown']) == 33)
+          flags[3:] == [u'1', u'1', u'1|2|3'] and len([l for l in lines if l[0] == u'dropdown']) == 43)
     check('a linked Twitch shows its channel, an unlinked one a Connect button',
           [u'text', u'Channel: license__'] in lines
           and [u'button', CONNECT_VAR, u'Channel: not linked', u'Connect'] in

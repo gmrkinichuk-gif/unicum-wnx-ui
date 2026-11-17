@@ -5,9 +5,9 @@ package unicum
    {
       public static const DURATION:Number = 150;
 
-      public static function step(position:Number, target:Number, elapsed:Number) : Number
+      public static function step(position:Number, target:Number, elapsed:Number, duration:Number = 150) : Number
       {
-         var distance:Number = Math.max(0, elapsed) / DURATION;
+         var distance:Number = Math.max(0, elapsed) / Math.max(50, Math.min(300, duration));
          return target > position ? Math.min(target, position + distance) :
                                     Math.max(target, position - distance);
       }

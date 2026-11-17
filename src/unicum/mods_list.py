@@ -29,8 +29,6 @@ import functools
 import logging
 import time
 
-import BigWorld
-
 from unicum import config
 from unicum.settings_window.labels import LINKAGE
 
@@ -45,6 +43,7 @@ MOD_ID = 'gg.unicum.menu'
 # callbacks, whatever starts it, can reopen the window in a loop.
 _REOPEN_SECONDS = 2.0
 _last_open = [0.0]
+_session = None
 
 # modsSettingsApi's id for its own entry.
 _SETTINGS_ENTRY = 'modsSettingsApi'
@@ -69,6 +68,9 @@ class ModsListEntry(object):
         self._api = None
 
     def install(self):
+        global _session
+        _session = self._session
+        self._session.on_close(self._remove)
         try:
             from gui.modsListApi import g_modsListApi
         except ImportError:
@@ -80,10 +82,14 @@ class ModsListEntry(object):
             description='Language flags and ratings from unicum.gg',
             icon=config.ICON_RES_PATH, enabled=True, login=False, lobby=True,
             callback=_CALLBACK)
-        self._session.on_close(self._remove)
         _logger.info('added to modsListApi as %s', MOD_ID)
 
     def _remove(self):
+        global _session
+        if _session is self._session:
+            _session = None
+        if self._api is None:
+            return
         try:
             self._api.removeModification(MOD_ID)
         except Exception:
@@ -96,12 +102,13 @@ def open_settings():
     if now - _last_open[0] < _REOPEN_SECONDS:
         return
     _last_open[0] = now
-    BigWorld.callback(_OPEN_DELAY, _OPEN_NOW)
+    if _session is not None and _session.alive:
+        _session.callback(_OPEN_DELAY, _OPEN_NOW)
 
 
 def open_now():
     """Open the settings window on the mod's page."""
-    for opener in (_open_aslain, _open_izeberg, _open_settings_entry):
+    for opener in (_open_aslain, _open_izeberg, _open_settings_entry, _open_native):
         try:
             if opener():
                 _logger.info('settings window opened with %s', opener.__name__)
@@ -109,6 +116,17 @@ def open_now():
         except Exception:
             _logger.exception('could not open the settings window with %s', opener.__name__)
     _logger.warning('no settings window to open')
+
+
+def _open_native():
+    from unicum import views
+    view = views.lobby_view()
+    if view is None:
+        return False
+    view.openSettingsTab()
+    from gui.shared import event_dispatcher
+    event_dispatcher.showSettingsWindow()
+    return True
 
 
 def _open_aslain():
@@ -136,8 +154,8 @@ def _open_izeberg():
         from gui.modsSettingsApi.view import loadView
     except ImportError:
         return False
-    # The public object wraps the one loadView takes.
-    internal = getattr(g_modsSettingsApi, '_ModsSettingsApi__instance', None)
+    from unicum.settings_window.window import api_instance
+    internal = api_instance(g_modsSettingsApi)
     if internal is None:
         return False
     loadView(internal)

@@ -24,6 +24,7 @@ package unicum
    public class SettingsTabs
    {
       public static const LABEL:String = "unicum.gg";
+      public static var requested:Boolean = false;
 
       // The window's own class, and the symbol of settingsWindow.swf built on it.
       private static const WINDOW_CLASSES:Array = ["net.wg.gui.lobby.settings::SettingsWindow", "SettingsWindowUI"];
@@ -122,6 +123,11 @@ package unicum
                var selected:int = this._selected ? tabs.length - 1 : bar.selectedIndex;
                bar.dataProvider = new list(tabs);
                bar.selectedIndex = selected;
+            }
+            if(requested && bar != null && bar.dataProvider != null)
+            {
+               requested = false;
+               this.keep(bar, tabs);
             }
             if(SettingsTab.holding > 0)
             {

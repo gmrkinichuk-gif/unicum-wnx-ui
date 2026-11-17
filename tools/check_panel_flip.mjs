@@ -45,7 +45,8 @@ const nativeTarget = new Function('PLAYERS_PANEL_STATE', 'row',
 const statisticsBody = modeSource.match(/public static function statistics\(row:Object, marker:Array\) : String\s*\{([\s\S]*?)\n      \}/)?.[1];
 assert.ok(statisticsBody, 'actual PanelModes.statistics body must be present');
 const statisticsJS = statisticsBody.replace(/int\(/g, 'Number(').replace(/(var\s+\w+):\w+/g, '$1').replace(/catch\((\w+):\w+\)/g, 'catch($1)');
-const nativeStatistics = new Function('PLAYERS_PANEL_STATE', 'row', 'marker', statisticsJS);
+const rosterOptions = {altStats: 0};
+const nativeStatistics = new Function('RosterOptions', `return function(PLAYERS_PANEL_STATE,row,marker){${statisticsJS}}`)(rosterOptions);
 function fixtureMarker(line) {
   const parts = line ? line.split(' | ') : [];
   const marker = [];

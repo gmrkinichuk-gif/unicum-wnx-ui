@@ -46,6 +46,14 @@ function mark(node, name) {
   classes.get(node).add(name);
   if (!node.classList.contains(name)) node.classList.add(name);
 }
+function restoreColor(node) {
+  const saved = owned.get(node);
+  const color = saved && saved.get('color');
+  if (!color) return;
+  if (color[0]) node.style.setProperty('color', color[0], color[1]);
+  else node.style.removeProperty('color');
+  saved.delete('color');
+}
 function filteredMark(root, selector, name, excluded) {
   // Coherent 2.4.1.1 rejects CSS negation selectors. Preserve the original
   // case-sensitive class-substring exclusions and own the positive class.
@@ -85,8 +93,10 @@ function rem(px) {
 }
 function statsOf(player) {
   if (!data.shown) return [];
+  const options = data.wnxUI || {};
   return [wnx(player && player.wnx), player && player.winrate, player && player.battles]
-    .map(value => value === undefined || value === null || value === '' ? '\u2014' : String(value));
+    .map((value, index) => options[['wnx', 'winrate', 'battles'][index]] === false ? '' :
+      value === undefined || value === null || value === '' ? '\u2014' : String(value));
 }
 function removeRow(row) {
   const entry = rows.get(row);
@@ -104,13 +114,28 @@ function decorate(row, side) {
   filteredMark(row, '[class*="Player_vehicleContour_"]', 'unicum-roster-contour',
     ['wrapper', 'image', 'level', 'voice']);
   if (side === 'enemies') mark(row, 'unicum-roster-enemy');
-  css(row, 'background-color', 'rgba(12,16,22,0.96)');
-  css(row, 'background-image', `linear-gradient(${rgba(color, 0.42)},${rgba(color, 0.42)})`);
+  const options = data.wnxUI || {};
+  const highlight = options.background !== false && !(player && player.filtered);
+  const opacity = Number.isFinite(options.opacity) ? options.opacity / 100 : 0.42;
+  css(row, 'background-color', highlight ? rgba('#0c1016', Math.min(0.96, opacity * 2.4)) : 'transparent');
+  css(row, 'background-image', highlight ? `linear-gradient(${rgba(color, opacity)},${rgba(color, opacity)})` : 'none');
   // The client itself uses inset shadows. A wash sits over the WNX fill
   // and below text without introducing a tooltip-clipping stacking context.
   css(row, 'box-shadow', killed ? 'inset 0 0 0 1000rem rgba(160,25,30,0.24)' : 'none');
-  css(row, 'border-left-color', color);
-  css(row, 'border-right-color', color);
+  css(row, 'border-left-color', highlight ? color : 'transparent');
+  css(row, 'border-right-color', highlight ? color : 'transparent');
+  const current = (row.getAttribute('class') || '').indexOf('Player_base__current_') >= 0;
+  for (const [key, selector] of [['names', NAME], ['clans', '[class*="UserInfo_clanTag_"]'],
+    ['vehicles', '[class*="Player_vehicleName_"]']]) {
+    for (const node of Array.from(row.querySelectorAll(selector))) {
+      const choice = options[key] || 'light';
+      const className = `unicum-text-${key}`;
+      if (choice === 'light' && !current) mark(node, className);
+      else node.classList.remove(className);
+      if (choice === 'wnx' && !current && !(player && player.filtered)) css(node, 'color', color);
+      else restoreColor(node);
+    }
+  }
   let entry = rows.get(row);
   if (!entry) {
     const block = document.createElement('div');
@@ -130,10 +155,15 @@ function decorate(row, side) {
   // node. The native row's contour, vehicle and status columns stay intact.
   const user = row.querySelector('[class*="UserInfo_user_info_"]');
   if (user && entry.block.parentElement !== user) user.appendChild(entry.block);
-  const display = data.shown ? '' : 'none';
+  const display = data.shown && !(player && player.filtered) ? '' : 'none';
   if (entry.block.style.display !== display) entry.block.style.display = display;
   const values = statsOf(player);
-  for (let i = 0; i < 3; i++) text(entry.block.children[i], values[i] || '');
+  for (let i = 0; i < 3; i++) {
+    const cell = entry.block.children[i];
+    text(cell, values[i] || '');
+    const hidden = options[['wnx', 'winrate', 'battles'][i]] === false;
+    css(cell, 'display', hidden ? 'none' : '');
+  }
   const nickWrap = row.querySelector('[class*="UserInfo_nickname_wrapper_"]');
   const live = row.querySelector('[class*="LiveTag_liveTag__wrapper_"]');
   // The bound LiveTag root is a direct row child in the client's It/Du.
@@ -151,7 +181,7 @@ function decorate(row, side) {
   }
   const unknown = !key || !player || !player.wnxAvailable ||
     (name && name.getAttribute('data-bind-value') || '').indexOf('.hiddenUserName') >= 0;
-  if (nickWrap && unknown && data.indicatorEnabled) {
+  if (nickWrap && unknown && data.indicatorEnabled && !(player && player.filtered)) {
     if (entry.eye.parentElement !== nickWrap) nickWrap.appendChild(entry.eye);
   } else entry.eye.remove();
   return player && player.wnxAvailable ? 1 : 0;

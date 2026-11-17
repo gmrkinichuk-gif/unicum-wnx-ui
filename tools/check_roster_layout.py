@@ -57,6 +57,36 @@ def fixture(baseline=None):
     verify = """
 const ownRow=document.querySelector('[data-qa="allies-4"]');
 ownRow.classList.add('Player_base__current_b9e88');
+function optionsCycle(errors,done) {
+ const row=document.querySelector('[data-qa="allies-0"]');
+ const nick=row.querySelector('[class*="UserInfo_tooltip_trigger_"]');
+ const icon=row.querySelector('[class*="Player_vehicleContour_ed"]');
+ const iconHTML=icon.outerHTML;
+ const changed=JSON.parse(api.model.model.data);
+ changed.wnxUI={background:false,opacity:0,wnx:false,winrate:true,battles:false,
+   names:'wnx',clans:'native',vehicles:'native'};
+ api.model.model.data=JSON.stringify(changed);
+ setTimeout(()=>{
+   const cells=row.querySelector('.unicum-roster-stats').children;
+   if(row.style.backgroundImage!=='none') errors.push('background switch did not remove tint');
+   if(getComputedStyle(cells[0]).display!=='none' || getComputedStyle(cells[2]).display!=='none') errors.push('stat switches did not hide WNX/battles');
+   if(getComputedStyle(cells[1]).display==='none') errors.push('WR should remain visible');
+   if(getComputedStyle(nick).color!=='rgb(122, 79, 178)') errors.push('WNX nickname colour was not applied');
+   const tank=row.querySelector('[class*="Player_vehicleName_"]');
+   if(tank.style.color || tank.classList.contains('unicum-text-vehicles')) errors.push('native vehicle colour still overridden');
+   changed.wnxUI={background:true,opacity:20,wnx:true,winrate:true,battles:true,
+     names:'native',clans:'wnx',vehicles:'wnx'};
+   api.model.model.data=JSON.stringify(changed);
+   setTimeout(()=>{
+     if(row.style.backgroundImage.indexOf('0.2')<0) errors.push('opacity did not reach the actual row');
+     if(nick.style.color || nick.classList.contains('unicum-text-names')) errors.push('native nickname colour still overridden');
+     if(getComputedStyle(tank).color!=='rgb(122, 79, 178)') errors.push('WNX vehicle colour was not applied');
+     if(getComputedStyle(cells[0]).display==='none') errors.push('WNX column did not return');
+     if(row.querySelector('[class*="Player_vehicleContour_ed"]')!==icon || icon.outerHTML!==iconHTML) errors.push('settings change replaced the native contour');
+     done();
+   },250);
+ },250);
+}
 setTimeout(() => {
  const errors = [], metrics = [];
  if(styleWrites-window.__styleWritesAt500!==0) errors.push('settled poll rewrote '+(styleWrites-window.__styleWritesAt500)+' inline styles');
@@ -146,13 +176,13 @@ setTimeout(() => {
    if(!first.textContent.includes('7 777')) errors.push('late update did not redraw');
    if(document.querySelectorAll('.unicum-roster-stats').length !== originalCount) errors.push('update duplicated rows');
    if(firstIcon.outerHTML !== oldIcon) errors.push('native icon mutated');
-   liveCycle(errors,()=>{deathCycle(()=>{
+   liveCycle(errors,()=>{deathCycle(()=>{optionsCycle(errors,()=>{
    part.stop();
    if(document.querySelectorAll('.unicum-roster-stats,.unicum-roster-live-slot,.unicum-roster-live-host,.unicum-roster-live-tag,.unicum-roster-row,.unicum-roster-view,.unicum-roster-content,.unicum-roster-contour').length) errors.push('teardown leaked decoration');
    api.model.model.data=JSON.stringify(old);
    part=(new Function('api',source))(api);
    document.querySelector('#qa-result').textContent=JSON.stringify({errors,metrics,liveEvidence,viewport:innerWidth,maxPollMs:Math.max(...pollTimes),styleWrites});
-   });});
+   });});});
  },250);
 },600);
 """

@@ -91,17 +91,13 @@ class SettingsTab(object):
             drawing=self._previewing())
 
     def _tick(self):
-        try:
-            page = self._page()
-        except Exception:
-            _logger.exception('could not describe the settings tab')
-            return
         for name, flash in (('lobby', views.lobby_view()), ('battle', views.battle_view())):
             if flash is None:
                 self._published.pop(name, None)
                 continue
             try:
                 self._take(flash)
+                page = self._page()
                 if self._published.get(name) != page:
                     flash.settingsTab = page
                     self._published[name] = page
@@ -139,7 +135,7 @@ class SettingsTab(object):
             codec.apply_window(raw, self._settings, self._link)
         # Each button once, however many times the message names it.
         for var in dict.fromkeys(buttons):
-            window.handle_button(var, self._settings, 'settings-tab')
+            window.handle_button(var, self._settings, 'settings-tab', self._session)
         if labels.CONNECT_VAR in buttons and self._link is not None:
             self._link.connect(labels.linked_notice)
 

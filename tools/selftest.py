@@ -21,6 +21,7 @@ from checks.api import (check_browser_scope, check_entries, check_lookup, check_
 from checks.battle_options import check_alt_only, check_battle_modes, check_battle_results, check_reload_announcer
 from checks.client import install_fake_client
 from checks.marker_stripe import run as check_marker_stripe
+from checks.settings_ui import run as check_settings_ui
 from checks.common import FLAG_CODES, REPO, check, render_stub
 from checks.engine import FakeBigWorld
 from checks.fakes import (
@@ -133,6 +134,7 @@ def main():
         check_room_sort(workdir)
         check_settings(workdir)
         check_settings_window()
+        check_settings_ui(workdir)
         check_settings_registration(workdir)
         check_settings_preview(workdir)
         check_battle_modes(workdir)

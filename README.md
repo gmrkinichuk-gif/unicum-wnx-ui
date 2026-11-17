@@ -6,7 +6,7 @@ not an official Unicum.gg or Wargaming release.
 
 This version was developed with the assistance of ChatGPT (Codex).
 
-The current local modification is **0.9.17**, derived from the **0.9.0** source
+The current version is **0.9.18**, derived from the **0.9.0** source
 snapshot. These numbers come from the supplied changelogs, not the development
 bootstrap placeholders. The release builder injects the requested version into
 the compiled package. See [CHANGELOG.md](CHANGELOG.md) and [NOTICE](NOTICE).
@@ -30,6 +30,10 @@ WNX values and colour bands come from Unicum.gg. The modification does not
 define replacement rating thresholds. The current UI uses row/marker accents;
 the legacy `colorNamesByWnx`, `colorClanTagsByWnx` and `colorVehiclesByWnx`
 settings are high-contrast text overrides in the redesigned rosters.
+
+## Update 0.9.18
+
+Adds configurable loading, battle-panel, Tab and overhead-marker presentation; a saved English/Ukrainian settings language; and fixes the blank optional modsSettingsApi window. The maintainer reports successful in-game testing of the development candidate. See [in-game settings](docs/IN_GAME_SETTINGS.md) for details and validation limits.
 
 ## Update 0.9.17
 
@@ -57,13 +61,11 @@ Never load another Unicum.gg version or the development bootstrap alongside it.
 
 ## Installation and removal
 
-Download the [0.9.17 installation ZIP](downloads/0.9.17/unicum.gg_0.9.17_wot_2.4.1.1.zip?raw=true)
-or [standalone .wotmod](downloads/0.9.17/gg.unicum_0.9.17.wotmod?raw=true).
-[Matching source archive](downloads/0.9.17/unicum_wnx_0.9.17_sources.zip?raw=true)
-and SHA-256 checksums are provided in the same directory. These are versioned
-repository downloads, not a GitHub Release. This candidate was built and
-installed locally and used in a live battle; full UI regression validation of
-0.9.17 in the client remains incomplete. Startup hitches are not claimed fixed.
+The previous [0.9.17 installation ZIP](downloads/0.9.17/unicum.gg_0.9.17_wot_2.4.1.1.zip?raw=true)
+and [standalone .wotmod](downloads/0.9.17/gg.unicum_0.9.17.wotmod?raw=true)
+remain available. **0.9.18 release binaries are not yet published.** Build the
+final package from matching client files and validate its checksums before
+adding the new download links. Do not distribute a mirror-built CI artifact.
 
 1. Close the client and back up existing Unicum settings and mod files.
 2. Remove the previous `gg.unicum_*.wotmod` and any Unicum dev bootstrap.
@@ -73,6 +75,12 @@ installed locally and used in a live battle; full UI regression validation of
 
 Settings are created in `mods/configs/unicum/settings.json`; the default metric
 is `wnx`. modsSettingsApi and modsListApi are optional integrations.
+Version `0.9.18` adds WNX display controls and a saved
+**English / Українська** selector in the native **unicum.gg** settings tab and
+optional API page. See [in-game settings](docs/IN_GAME_SETTINGS.md) for the
+configuration schema, root cause and validation limits; 0.9.16 remains the
+verified baseline.
+
 To remove the mod, close the client and remove its `gg.unicum_*.wotmod`.
 Keep shared openwg_gameface if another installed mod uses it. Restore the backed
 up mod to roll back. Account links, settings and caches live outside this repo.
@@ -92,9 +100,9 @@ npm --prefix tools/flags run build
 npm --prefix tools/badges ci --no-audit --no-fund
 npm --prefix tools/badges run icon
 python tools/build_as3.py --game "C:/Games/World_of_Tanks_EU"
-python tools/build_release.py --version 0.9.17 --python27 "C:/Python27/python.exe" --game "C:/Games/World_of_Tanks_EU"
+python tools/build_release.py --version 0.9.18 --python27 "C:/Python27/python.exe" --game "C:/Games/World_of_Tanks_EU"
 & "C:/Python27/python.exe" -B tools/selftest.py
-& "C:/Python27/python.exe" -B tools/release_check.py dist/gg.unicum_0.9.17.wotmod
+& "C:/Python27/python.exe" -B tools/release_check.py dist/gg.unicum_0.9.18.wotmod
 node tools/check_roster_grid.mjs
 node tools/check_battle_ui.mjs
 ```

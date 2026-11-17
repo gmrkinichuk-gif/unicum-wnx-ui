@@ -21,6 +21,8 @@ from unicum.settings_window.labels import (_ALT_KEYS, _ALT_SCREENS,
                                            RELOAD_LABELS, SHOW_CHOICES,
                                            TEAM_CHOICES, WHEN_CHOICES)
 from unicum.settings import FIGURE_CHOICES, FIGURED
+from unicum.settings_window import wnx
+from unicum.settings_window.localize import LANGUAGES
 
 _logger = logging.getLogger('unicum.settings_window.codec')
 
@@ -43,6 +45,8 @@ def read_native(text):
                 continue
         elif kind == u'c':
             raw[str(var)] = value == u'1'
+        elif kind == u's':
+            raw[str(var)] = value
         elif kind == u'b':
             buttons.append(str(var))
     return raw, buttons
@@ -137,11 +141,22 @@ def to_window(values, card_shown=True, loadouts_hidden=False, battles_hidden=Fal
         window[_show_key(surface)] = _choice_of(SHOW_CHOICES, values[surface]['rating'], values[surface]['flags'])
     for surface in FIGURED:
         window[_figures_key(surface)] = FIGURE_CHOICES.index(values[surface]['figures'])
+    for surface in AVERAGED:
+        window[surface + 'Average'] = values[surface]['average']
+    window.update(wnx.to_window(values))
+    window['settingsLanguage'] = LANGUAGES.index(values.get('settingsLanguage', 'en'))
+    # updateModSettings replaces the API's entire dictionary. It indexes every
+    # varName, including labels with buttons, when generating the window.
+    from unicum.settings_window.labels import CONNECT_VAR, RESET_VAR, LINKS
+    window.update((var, -1) for var in [CONNECT_VAR, RESET_VAR] + [item[0] for item in LINKS])
     return window
 
 def from_window(raw):
     """settings.json changes from what the window sends back."""
-    changes = {}
+    changes = wnx.from_window(raw)
+    language = _index(raw.get('settingsLanguage'), LANGUAGES)
+    if language is not None:
+        changes['settingsLanguage'] = LANGUAGES[language]
     for key in ('enabled', 'tankButton', 'sendLoadouts', 'sendReplays',
                 'measurePerformance', 'winrateDecimal', 'colorNamesByWnx',
                 'colorClanTagsByWnx', 'colorVehiclesByWnx', 'showWnxBadges'):
@@ -189,8 +204,10 @@ def from_window(raw):
         if index is not None:
             _, rating, flags = SHOW_CHOICES[index]
             changes[surface] = {'rating': rating, 'flags': flags}
-            if surface in AVERAGED:
-                changes[surface]['average'] = rating
+    for surface in AVERAGED:
+        value = raw.get(surface + 'Average')
+        if isinstance(value, bool):
+            changes.setdefault(surface, {})['average'] = value
     for surface in FIGURED:
         index = _index(raw.get(_figures_key(surface)), FIGURE_CHOICES)
         if index is not None:

@@ -6,7 +6,7 @@ to the upstream wgmods service. Removed upstream tools targeted its repository
 or mod-hub ID and must not be reused for this derivative without adaptation.
 
 1. Keep the mod version at the latest accepted CHANGELOG version (currently
-   0.9.16); bump it only for a deliberately versioned change.
+   0.9.18); bump it only for a deliberately versioned change.
 2. Build from a matching installed EU client with README's commands, or run
    the manual `candidate` workflow with the current version. It reads the live
    client through the inherited client-files action. A candidate is an Actions

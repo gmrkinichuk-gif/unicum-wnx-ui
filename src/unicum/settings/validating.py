@@ -57,8 +57,12 @@ def validate(raw):
     """A complete, valid settings dict: defaults for anything missing or wrong."""
     if not isinstance(raw, dict):
         raw = {}
+    original = raw
     raw = _migrate(raw)
+    from unicum.settings.wnx import validate as validate_wnx
     values = {
+        'settingsLanguage': raw.get('settingsLanguage') if raw.get('settingsLanguage') in ('en', 'uk') else 'en',
+        'wnxUI': validate_wnx(raw.get('wnxUI')),
         'enabled': _bool(raw.get('enabled'), DEFAULTS['enabled']),
         'metric': raw.get('metric') if raw.get('metric') in METRICS else DEFAULTS['metric'],
         'window': raw.get('window') if raw.get('window') in WINDOWS else DEFAULTS['window'],
@@ -112,7 +116,12 @@ def validate(raw):
         # behaviour that every other one has.
         values[surface] = dict((key, _SURFACE_READERS.get(key, _bool)(given.get(key), default))
                                for key, default in DEFAULTS[surface].items())
-    return values
+    # Keep extension and legacy fields at every level. They may belong to an
+    # older/newer build sharing this file, but never override validated keys.
+    import copy
+    preserved = copy.deepcopy(original)
+    _merge(preserved, values)
+    return preserved
 
 def _figures_legacy(raw, migrated):
     """`onTank`, the switch this choice grew out of, read as a choice.
