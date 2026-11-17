@@ -1,15 +1,61 @@
 # Unicum WNX UI
 
-A modified [Unicum.gg World of Tanks client mod](https://github.com/unicum-gg/unicum.gg-mod),
-focused on WNX presentation in battle. This is an independent derivative,
-not an official Unicum.gg or Wargaming release.
+**Advanced battle statistics. A cleaner, customizable World of Tanks interface.**
 
-This version was developed with the assistance of ChatGPT (Codex).
+[![GitHub release](https://img.shields.io/github/v/release/gmrkinichuk-gif/unicum-wnx-ui?label=latest%20release)](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/latest)
+![WoT EU 2.4.1.1](https://img.shields.io/badge/WoT%20EU-2.4.1.1-596579)
+[![License AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-546c4e)](LICENSE)
 
-The current version is **0.9.18**, derived from the **0.9.0** source
-snapshot. These numbers come from the supplied changelogs, not the development
-bootstrap placeholders. The release builder injects the requested version into
-the compiled package. See [CHANGELOG.md](CHANGELOG.md) and [NOTICE](NOTICE).
+![Unicum WNX UI — promotional artwork](assets/banner-no-version.png)
+
+*Promotional concept artwork above; the screenshots below show the actual in-game interface.*
+
+A community-maintained, **unofficial derivative** of [Unicum.gg's World of Tanks mod](https://github.com/unicum-gg/unicum.gg-mod). This edition emphasizes WNX-coloured battle panels, streamlined statistics and practical in-game controls. It is **not** affiliated with or endorsed by Unicum.gg or Wargaming.
+
+**[Download the latest release](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/latest)** · **[0.9.18 installation ZIP](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/unicum.gg_0.9.18_wot_2.4.1.1.zip)** · **[Settings guide](docs/IN_GAME_SETTINGS.md)**
+
+## Screenshots — real gameplay
+
+### Tab scoreboard
+
+At a glance: **WNX · win rate · battles**, WNX-coloured team rows, vehicle contours and native player information.
+
+[![In-game Tab scoreboard with WNX, win rate and battle counts](screenshots/tab-scoreboard-closeup.png)](screenshots/tab-scoreboard-full.jpg)
+
+*Click the image for the full, unedited capture.*
+
+### Battle panels: normal vs. holding Alt
+
+The same roster switches between player/vehicle labels and additional statistics when you hold **Alt**. These are side-by-side comparisons cropped from real gameplay.
+
+**Allied team**
+
+[![Allied battle panels: normal mode compared with Alt statistics](screenshots/allies-normal-vs-alt.png)](screenshots/battle-panels-alt.jpg)
+
+**Enemy team**
+
+[![Enemy battle panels: normal mode compared with Alt statistics](screenshots/enemies-normal-vs-alt.png)](screenshots/battle-panels-normal.jpg)
+
+In the Full panel mode, the vehicle name remains visible while the nickname field switches to statistics.
+
+### On the battlefield
+
+![Battle panels while playing World of Tanks](screenshots/battle-panels-active.jpg)
+
+*Actual game capture. Appearance varies with your panel mode, UI scale and settings.*
+
+## Install
+
+**Current release:** [v0.9.18](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/tag/v0.9.18) for **World of Tanks EU 2.4.1.1**.
+
+1. Close World of Tanks and back up your existing Unicum configuration and mod.
+2. Download the [installation ZIP](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/unicum.gg_0.9.18_wot_2.4.1.1.zip) and remove any older `gg.unicum_*.wotmod` or developer bootstrap.
+3. Extract the ZIP **into the WoT installation directory**, preserving the included `mods/<client version>/` and other paths.
+4. Start the game. Open the **unicum.gg** settings tab to customize the loading screen, battle panels, Tab and markers.
+
+**Compatibility:** Other client versions and modpacks have not been certified. Mods replacing `battleVehicleMarkersApp.swf` may conflict. Do not install two Unicum variants together.
+
+The images used in this page are documented in [screenshots/README.md](screenshots/README.md). Real game screenshots and promotional artwork are intentionally distinguished.
 
 ## Features
 
@@ -61,11 +107,11 @@ Never load another Unicum.gg version or the development bootstrap alongside it.
 
 ## Installation and removal
 
+The current [0.9.18 installation ZIP](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/unicum.gg_0.9.18_wot_2.4.1.1.zip)
+and [standalone .wotmod](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/gg.unicum_0.9.18.wotmod)
+are published in the [v0.9.18 GitHub Release](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/tag/v0.9.18).
 The previous [0.9.17 installation ZIP](downloads/0.9.17/unicum.gg_0.9.17_wot_2.4.1.1.zip?raw=true)
-and [standalone .wotmod](downloads/0.9.17/gg.unicum_0.9.17.wotmod?raw=true)
-remain available. **0.9.18 release binaries are not yet published.** Build the
-final package from matching client files and validate its checksums before
-adding the new download links. Do not distribute a mirror-built CI artifact.
+remains available for rollback. Do not distribute a mirror-built CI artifact.
 
 1. Close the client and back up existing Unicum settings and mod files.
 2. Remove the previous `gg.unicum_*.wotmod` and any Unicum dev bootstrap.
