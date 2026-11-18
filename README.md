@@ -6,10 +6,10 @@ not an official Unicum.gg or Wargaming release.
 
 This version was developed with the assistance of ChatGPT (Codex).
 
-The current version is **0.9.18**, derived from the **0.9.0** source
-snapshot. These numbers come from the supplied changelogs, not the development
-bootstrap placeholders. The release builder injects the requested version into
-the compiled package. See [CHANGELOG.md](CHANGELOG.md) and [NOTICE](NOTICE).
+The latest published release is **v0.9.18** for **World of Tanks EU 2.4.1.1**.
+It is derived from the **0.9.0** source snapshot. See the
+[latest release](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/tag/v0.9.18),
+[CHANGELOG.md](CHANGELOG.md) and [NOTICE](NOTICE).
 
 ## Features
 
@@ -33,7 +33,13 @@ settings are high-contrast text overrides in the redesigned rosters.
 
 ## Update 0.9.18
 
-Adds configurable loading, battle-panel, Tab and overhead-marker presentation; a saved English/Ukrainian settings language; and fixes the blank optional modsSettingsApi window. The maintainer reports successful in-game testing of the development candidate. See [in-game settings](docs/IN_GAME_SETTINGS.md) for details and validation limits.
+The published v0.9.18 release adds configurable loading, battle-panel, Tab and
+overhead-marker presentation; a saved English/Ukrainian settings language; and
+a fix for the blank optional modsSettingsApi window. The maintainer reports
+successful in-game testing of the development candidate, including settings,
+battle panels, Alt and Tab. This does not certify every client, modpack or
+settings combination. See [in-game settings](docs/IN_GAME_SETTINGS.md) for
+configuration details and remaining validation limits.
 
 ## Update 0.9.17
 
@@ -61,11 +67,15 @@ Never load another Unicum.gg version or the development bootstrap alongside it.
 
 ## Installation and removal
 
-The previous [0.9.17 installation ZIP](downloads/0.9.17/unicum.gg_0.9.17_wot_2.4.1.1.zip?raw=true)
-and [standalone .wotmod](downloads/0.9.17/gg.unicum_0.9.17.wotmod?raw=true)
-remain available. **0.9.18 release binaries are not yet published.** Build the
-final package from matching client files and validate its checksums before
-adding the new download links. Do not distribute a mirror-built CI artifact.
+**Latest published version: v0.9.18** ([release notes and assets](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/tag/v0.9.18)).
+
+- [Installation ZIP — WoT EU 2.4.1.1](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/unicum.gg_0.9.18_wot_2.4.1.1.zip) (recommended; includes the required openwg_gameface component).
+- [Standalone .wotmod](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/gg.unicum_0.9.18.wotmod) (for users who already have compatible dependencies installed).
+- [SHA-256 checksums](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/SHA256SUMS.txt) and [client manifest](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/client.json).
+
+Earlier versions remain available in [GitHub Releases](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases).
+Release binaries must be built against matching client files; mirror-built CI
+artifacts are for compilation checks only and must not be distributed.
 
 1. Close the client and back up existing Unicum settings and mod files.
 2. Remove the previous `gg.unicum_*.wotmod` and any Unicum dev bootstrap.
@@ -78,8 +88,8 @@ is `wnx`. modsSettingsApi and modsListApi are optional integrations.
 Version `0.9.18` adds WNX display controls and a saved
 **English / Українська** selector in the native **unicum.gg** settings tab and
 optional API page. See [in-game settings](docs/IN_GAME_SETTINGS.md) for the
-configuration schema, root cause and validation limits; 0.9.16 remains the
-verified baseline.
+configuration schema, root cause and validation limits. The v0.9.18 release is
+published, but not every optional API/modpack combination has been live-tested.
 
 To remove the mod, close the client and remove its `gg.unicum_*.wotmod`.
 Keep shared openwg_gameface if another installed mod uses it. Restore the backed
