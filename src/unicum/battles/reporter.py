@@ -45,8 +45,9 @@ _SEND_DELAY = 3.0
 class Reporter(Sending, Claiming):
     """Follows the client's battles and sends them on."""
 
-    def __init__(self, session, settings, link, motion=None, replays=None):
+    def __init__(self, session, settings, link, motion=None, replays=None, tracker=None):
         self._session = session
+        self._tracker = tracker
         self._settings = settings
         self._link = link
         # Where everybody was, sampled by `motion` while the battle ran. Absent
@@ -163,6 +164,11 @@ class Reporter(Sending, Claiming):
 
     def _record(self, results):
         """One battle's results, straight off the server. Write it down."""
+        if self._tracker is not None:
+            try:
+                self._tracker.record(results)
+            except Exception:
+                _logger.exception('local tracker failed; standard results and reporting continue')
         if not self._sends():
             return
         arena_id = str((results or {}).get('arenaUniqueID') or '')

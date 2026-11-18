@@ -69,7 +69,7 @@ from __future__ import absolute_import
 from unicum.battles.reporter import Reporter
 
 
-def install(session, settings, link, motion=None, replays=None):
-    reporter = Reporter(session, settings, link, motion, replays)
+def install(session, settings, link, motion=None, replays=None, tracker=None):
+    reporter = Reporter(session, settings, link, motion, replays, tracker)
     reporter.install()
     return reporter

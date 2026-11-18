@@ -60,7 +60,9 @@ def validate(raw):
     original = raw
     raw = _migrate(raw)
     from unicum.settings.wnx import validate as validate_wnx
+    from unicum.tracker.options import validate as validate_tracker
     values = {
+        'wnxTracker': validate_tracker(raw.get('wnxTracker')),
         'settingsLanguage': raw.get('settingsLanguage') if raw.get('settingsLanguage') in ('en', 'uk') else 'en',
         'wnxUI': validate_wnx(raw.get('wnxUI')),
         'enabled': _bool(raw.get('enabled'), DEFAULTS['enabled']),
