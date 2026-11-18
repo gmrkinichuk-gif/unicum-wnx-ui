@@ -8,6 +8,8 @@ package unicum.tracker
    import flash.geom.Point;
    import flash.utils.getQualifiedClassName;
    import flash.utils.Dictionary;
+   import net.wg.gui.lobby.menu.LobbyMenu;
+   import net.wg.gui.lobby.settings.SettingsWindow;
 
    public class TrackerRoot extends Sprite
    {
@@ -168,8 +170,8 @@ package unicum.tracker
          var target:DisplayObject = event.target as DisplayObject;
          if(target == null) return;
          var name:String = getQualifiedClassName(target);
-         if(name != "LobbyMenuUI" && name != "net.wg.gui.lobby.menu::LobbyMenu" &&
-            name != "SettingsWindowUI" && name != "net.wg.gui.lobby.settings::SettingsWindow") return;
+         if(!(target is LobbyMenu) && !(target is SettingsWindow) &&
+            name != "LobbyMenuUI" && name != "SettingsWindowUI") return;
          _nativeWindows[target] = true;
          target.addEventListener(Event.REMOVED_FROM_STAGE, nativeClosed, false, 0, true);
          closeSettings();
