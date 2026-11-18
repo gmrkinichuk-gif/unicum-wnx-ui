@@ -1,6 +1,7 @@
 package unicum
 {
    import net.wg.infrastructure.base.AbstractView;
+   import unicum.tracker.TrackerRoot;
 
    // The mod's one view in the lobby, loaded by src/unicum/views.py.
    //
@@ -24,6 +25,22 @@ package unicum
       private var _contacts:ContactColumns;
 
       private var _settingsTabs:SettingsTabs;
+      private var _tracker:TrackerRoot;
+
+      public function setTrackerState(value:String) : void
+      {
+         if(_tracker != null) _tracker.update(value);
+      }
+
+      public function takeTrackerOut() : String
+      {
+         return _tracker != null ? _tracker.take() : "";
+      }
+
+      public function hideTracker() : void { if(_tracker != null) _tracker.hide(); }
+      public function resetTrackerPosition() : void { if(_tracker != null) _tracker.resetPosition(); }
+      public function discardTrackerDraft() : void { if(_tracker != null) _tracker.discardDraft(); }
+      public function escapeTrackerSettings() : Boolean { return _tracker != null && _tracker.escapeSettings(); }
 
       public function LobbyView()
       {
@@ -188,6 +205,7 @@ package unicum
          this._room = new RoomTools(this);
          this._contacts = new ContactColumns(this);
          this._settingsTabs = new SettingsTabs(this);
+         this._tracker = new TrackerRoot(this);
       }
 
       override protected function onDispose() : void
@@ -196,6 +214,7 @@ package unicum
          this._room.dispose();
          this._contacts.dispose();
          this._settingsTabs.dispose();
+         if(this._tracker != null) this._tracker.dispose();
          super.onDispose();
       }
    }

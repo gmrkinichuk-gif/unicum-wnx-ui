@@ -144,6 +144,10 @@ def to_window(values, card_shown=True, loadouts_hidden=False, battles_hidden=Fal
     for surface in AVERAGED:
         window[surface + 'Average'] = values[surface]['average']
     window.update(wnx.to_window(values))
+    from unicum.tracker import options as tracker
+    tracked = tracker.validate(values.get('wnxTracker'))
+    for key, choices in (('mode', tracker.MODES), ('count', tracker.COUNTS), ('opacity', tracker.OPACITIES)):
+        window['tracker_' + key] = choices.index(tracked[key])
     window['settingsLanguage'] = LANGUAGES.index(values.get('settingsLanguage', 'en'))
     # updateModSettings replaces the API's entire dictionary. It indexes every
     # varName, including labels with buttons, when generating the window.
@@ -154,6 +158,11 @@ def to_window(values, card_shown=True, loadouts_hidden=False, battles_hidden=Fal
 def from_window(raw):
     """settings.json changes from what the window sends back."""
     changes = wnx.from_window(raw)
+    from unicum.tracker import options as tracker
+    for key, choices in (('mode', tracker.MODES), ('count', tracker.COUNTS), ('opacity', tracker.OPACITIES)):
+        index = _index(raw.get('tracker_' + key), choices)
+        if index is not None:
+            changes.setdefault('wnxTracker', {})[key] = choices[index]
     language = _index(raw.get('settingsLanguage'), LANGUAGES)
     if language is not None:
         changes['settingsLanguage'] = LANGUAGES[language]
