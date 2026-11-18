@@ -1,15 +1,50 @@
 # Unicum WNX UI
 
-A modified [Unicum.gg World of Tanks client mod](https://github.com/unicum-gg/unicum.gg-mod),
-focused on WNX presentation in battle. This is an independent derivative,
-not an official Unicum.gg or Wargaming release.
+**Advanced battle statistics. A cleaner, customizable World of Tanks interface.**
 
-This version was developed with the assistance of ChatGPT (Codex).
+[![Latest GitHub release](https://img.shields.io/github/v/release/gmrkinichuk-gif/unicum-wnx-ui?label=latest%20release)](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/latest)
+![WoT EU 2.4.1.1](https://img.shields.io/badge/WoT%20EU-2.4.1.1-596579)
+[![AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-546c4e)](LICENSE)
 
-The latest published release is **v0.9.18** for **World of Tanks EU 2.4.1.1**.
-It is derived from the **0.9.0** source snapshot. See the
-[latest release](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/tag/v0.9.18),
-[CHANGELOG.md](CHANGELOG.md) and [NOTICE](NOTICE).
+![Unicum WNX UI — promotional artwork](assets/banner-no-version.png)
+
+*Promotional concept artwork above. The screenshots below show the actual in-game interface.*
+
+An **unofficial derivative** of the [Unicum.gg World of Tanks client mod](https://github.com/unicum-gg/unicum.gg-mod), focused on more readable, configurable WNX statistics in battle. **Not affiliated with or endorsed by Unicum.gg or Wargaming.**
+
+The latest published release is **v0.9.18** for **World of Tanks EU 2.4.1.1**, based on the supplied **0.9.0** upstream source snapshot. Development involved assistance from ChatGPT (Codex). See [CHANGELOG.md](CHANGELOG.md) and [NOTICE](NOTICE).
+
+**[Download v0.9.18](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/tag/v0.9.18)** · **[Installation ZIP](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/unicum.gg_0.9.18_wot_2.4.1.1.zip)** · **[In-game settings guide](docs/IN_GAME_SETTINGS.md)**
+
+## Screenshots — real gameplay
+
+### Tab scoreboard
+
+At a glance: **WNX · win rate · battles**, WNX-coloured team rows, vehicle contours and native player information.
+
+[![In-game Tab scoreboard with WNX, win rate and battle counts](screenshots/tab-scoreboard-closeup.png)](screenshots/tab-scoreboard-full.jpg)
+
+*Click the image for the full, unedited capture.*
+
+### Battle panels: normal vs. holding Alt
+
+The same roster switches between player/vehicle labels and additional statistics when you hold **Alt**. These are side-by-side comparisons cropped from real gameplay.
+
+**Allied team**
+
+[![Allied battle panels: normal mode compared with Alt statistics](screenshots/allies-normal-vs-alt.png)](screenshots/battle-panels-alt.jpg)
+
+**Enemy team**
+
+[![Enemy battle panels: normal mode compared with Alt statistics](screenshots/enemies-normal-vs-alt.png)](screenshots/battle-panels-normal.jpg)
+
+In the Full panel mode, the vehicle name remains visible while the nickname field switches to statistics.
+
+### On the battlefield
+
+![Battle panels while playing World of Tanks](screenshots/battle-panels-active.jpg)
+
+*Actual game capture. Appearance varies with your panel mode, UI scale and settings.*
 
 ## Features
 
