@@ -21,6 +21,18 @@ Candidate `0.9.19-dev.3` для клієнта `2.4.1.1 #993`. Початков�
 | Старі екрани й опційний API | Чотири наявні JS перевірки, тест байткоду modsSettingsApi 1.7.1 і побайтове порівняння бойових SWF з 0.9.18 |
 | Пакування | Apache Royale з бібліотеками встановленого `2.4.1.1 #993`, Python 2.7 `release_check.py` |
 | Базовий запуск та вигляд | WoT EU 1920×1080, встановлений набір модів. `dev.1` відкрив віджет, шестерню, General, WNX Tracker та червоне підтвердження. Apply змінив мову на UK та зберіг її. Cancel лишив N=20 після редагування N на 30. |
+| Кеш після запуску | `dev.2` записав перевірену таблицю в `wnx_tracker/expected.json` у встановленому клієнті. |
+| Escape та шар системного меню | У `dev.2` Escape також відкривав меню WoT, а Tracker міг його перекривати. `dev.3` поглинає Escape в диспетчері гри, коли вікно Tracker відкрите, і приховує Tracker на час показу штатного меню або налаштувань. Обидві гілки поки підтверджені fixtures. |
+
+Відтворення candidate з кореня репозиторію після підготовки flags та icons за [інструкцією збірки](DEVELOPMENT.md):
+
+```powershell
+python tools/build_as3.py --game F:/Games/World_of_Tanks_EU
+python tools/build_release.py --version 0.9.19-dev.3 --game F:/Games/World_of_Tanks_EU --python27 PATH_TO_PYTHON27
+& PATH_TO_PYTHON27 tools/selftest.py
+& PATH_TO_PYTHON27 tools/release_check.py dist/gg.unicum_0.9.19-dev.3.wotmod
+node tools/check_tracker_ui.mjs
+```
 
 ## Матриця приймання в клієнті
 

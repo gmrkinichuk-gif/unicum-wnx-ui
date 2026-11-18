@@ -3,6 +3,7 @@ package unicum.tracker
    import flash.display.DisplayObjectContainer;
    import flash.display.DisplayObject;
    import flash.display.Sprite;
+   import flash.display.Stage;
    import flash.events.Event;
    import flash.events.MouseEvent;
    import flash.geom.Point;
@@ -26,6 +27,7 @@ package unicum.tracker
       private var _placed:Boolean = false;
       private var _inGarage:Boolean = false;
       private var _nativeWindows:Dictionary = new Dictionary(true);
+      private var _listeningStage:Stage;
 
       public function TrackerRoot(host:DisplayObjectContainer)
       {
@@ -38,8 +40,29 @@ package unicum.tracker
          addChild(_tooltip);
          host.addChild(this);
          visible = false;
-         if(stage != null) stage.addEventListener(Event.RESIZE, resized);
-         if(stage != null) stage.addEventListener(Event.ADDED_TO_STAGE, nativeWindow, true, 0, true);
+         addEventListener(Event.ADDED_TO_STAGE, attachStage);
+         addEventListener(Event.REMOVED_FROM_STAGE, detachStage);
+         attachStage();
+      }
+
+      private function attachStage(event:Event = null) : void
+      {
+         if(stage == null || stage == _listeningStage) return;
+         detachStage();
+         _listeningStage = stage;
+         _listeningStage.addEventListener(Event.RESIZE, resized);
+         _listeningStage.addEventListener(Event.ADDED_TO_STAGE, nativeWindow, true, 0, true);
+      }
+
+      private function detachStage(event:Event = null) : void
+      {
+         if(_listeningStage == null) return;
+         _listeningStage.removeEventListener(Event.RESIZE, resized);
+         _listeningStage.removeEventListener(Event.ADDED_TO_STAGE, nativeWindow, true);
+         _listeningStage = null;
+         for(var window:Object in _nativeWindows)
+            DisplayObject(window).removeEventListener(Event.REMOVED_FROM_STAGE, nativeClosed);
+         _nativeWindows = new Dictionary(true);
       }
 
       public function word(value:String) : String
@@ -258,11 +281,9 @@ package unicum.tracker
       {
          hide();
          _widget.dispose();
-         if(stage != null) stage.removeEventListener(Event.RESIZE, resized);
-         if(stage != null) stage.removeEventListener(Event.ADDED_TO_STAGE, nativeWindow, true);
-         for(var window:Object in _nativeWindows)
-            DisplayObject(window).removeEventListener(Event.REMOVED_FROM_STAGE, nativeClosed);
-         _nativeWindows = new Dictionary(true);
+         detachStage();
+         removeEventListener(Event.ADDED_TO_STAGE, attachStage);
+         removeEventListener(Event.REMOVED_FROM_STAGE, detachStage);
          if(parent != null) parent.removeChild(this);
       }
    }

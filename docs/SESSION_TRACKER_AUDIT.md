@@ -1,6 +1,8 @@
 # Session Tracker audit — 2026-11-17
 
 Base: origin/main `2b4269d6da9cd77d1931af9b10b4978e61f02c0a`, release 0.9.18.
+The implementation branch was later rebased onto `1f3a482`, which only adds
+0.9.18 documentation and screenshots.
 Branch: feature/wnx-session-tracker. The supplied TECHNICAL_SPEC_UK.md takes
 precedence over the English-only convention and conceptual reference controls.
 Both approved PNGs were inspected; the in-client width budget is 320 logical px.
