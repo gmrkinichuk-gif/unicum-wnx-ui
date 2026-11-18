@@ -1,9 +1,13 @@
-# In-game settings development candidate
+# In-game settings — v0.9.18
 
-`0.9.18` release source (originally tested as `0.9.18-dev.1`), branch `feature/in-game-settings`, based on current `main`
-(`7435e3b`, rebased after 0.9.17 reached main during development). The verified
-0.9.16 base, upstream 0.9.17 optimizations/downloads and existing releases are
-unchanged. Local experimental archives were not used as the implementation base.
+Version **v0.9.18** was published on **2026-11-17** with installation ZIP,
+standalone `.wotmod`, client manifest and SHA-256 checksums:
+[GitHub Release v0.9.18](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/tag/v0.9.18).
+The changes were originally developed on `feature/in-game-settings` and tested
+as `0.9.18-dev.1`, then merged into `main`. The notes below preserve the
+candidate's test evidence and remaining validation limits; release publication
+does not imply that every optional API, modpack or client combination was tested.
+Local experimental archives were not used as the implementation base.
 
 ## Why the window was empty
 
@@ -140,6 +144,8 @@ Outstanding matrix / compatibility checks (not claimed complete):
   loading/Tab options and marker placement; UI-scale checks beyond the observed
   1920×1080 native layout; sustained reopen/resource-leak measurement.
 
-The final bilingual artifact is in `dist/`; the running game may still have the
-earlier test package loaded. Close the client before installing the final file.
-No Release or merge is authorized by this candidate.
+The final v0.9.18 binaries are published in GitHub Releases (link above).
+For users upgrading from a development candidate or earlier version, close the
+client, remove the previous Unicum `.wotmod`, back up settings and install the
+published ZIP. The earlier in-game acceptance notes describe the development
+candidate, not a separately captured full regression test of the published binary.

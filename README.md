@@ -2,17 +2,19 @@
 
 **Advanced battle statistics. A cleaner, customizable World of Tanks interface.**
 
-[![GitHub release](https://img.shields.io/github/v/release/gmrkinichuk-gif/unicum-wnx-ui?label=latest%20release)](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/latest)
+[![Latest GitHub release](https://img.shields.io/github/v/release/gmrkinichuk-gif/unicum-wnx-ui?label=latest%20release)](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/latest)
 ![WoT EU 2.4.1.1](https://img.shields.io/badge/WoT%20EU-2.4.1.1-596579)
-[![License AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-546c4e)](LICENSE)
+[![AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-546c4e)](LICENSE)
 
 ![Unicum WNX UI — promotional artwork](assets/banner-no-version.png)
 
-*Promotional concept artwork above; the screenshots below show the actual in-game interface.*
+*Promotional concept artwork above. The screenshots below show the actual in-game interface.*
 
-A community-maintained, **unofficial derivative** of [Unicum.gg's World of Tanks mod](https://github.com/unicum-gg/unicum.gg-mod). This edition emphasizes WNX-coloured battle panels, streamlined statistics and practical in-game controls. It is **not** affiliated with or endorsed by Unicum.gg or Wargaming. The 0.9.18 release traces back to the supplied upstream 0.9.0 source snapshot; see [CHANGELOG](CHANGELOG.md) and [NOTICE](NOTICE). Development involved assistance from ChatGPT (Codex).
+An **unofficial derivative** of the [Unicum.gg World of Tanks client mod](https://github.com/unicum-gg/unicum.gg-mod), focused on more readable, configurable WNX statistics in battle. **Not affiliated with or endorsed by Unicum.gg or Wargaming.**
 
-**[Download the latest release](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/latest)** · **[0.9.18 installation ZIP](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/unicum.gg_0.9.18_wot_2.4.1.1.zip)** · **[Settings guide](docs/IN_GAME_SETTINGS.md)**
+The latest published release is **v0.9.18** for **World of Tanks EU 2.4.1.1**, based on the supplied **0.9.0** upstream source snapshot. Development involved assistance from ChatGPT (Codex). See [CHANGELOG.md](CHANGELOG.md) and [NOTICE](NOTICE).
+
+**[Download v0.9.18](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/tag/v0.9.18)** · **[Installation ZIP](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/unicum.gg_0.9.18_wot_2.4.1.1.zip)** · **[In-game settings guide](docs/IN_GAME_SETTINGS.md)**
 
 ## Screenshots — real gameplay
 
@@ -44,19 +46,6 @@ In the Full panel mode, the vehicle name remains visible while the nickname fiel
 
 *Actual game capture. Appearance varies with your panel mode, UI scale and settings.*
 
-## Quick start
-
-**Current release:** [v0.9.18](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/tag/v0.9.18) for **World of Tanks EU 2.4.1.1**.
-
-1. Close World of Tanks and back up your existing Unicum configuration and mod.
-2. Download the [installation ZIP](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/unicum.gg_0.9.18_wot_2.4.1.1.zip) and remove any older `gg.unicum_*.wotmod` or developer bootstrap.
-3. Extract the ZIP **into the WoT installation directory**, preserving the included `mods/<client version>/` and other paths.
-4. Start the game. Open the **unicum.gg** settings tab to customize the loading screen, battle panels, Tab and markers.
-
-**Compatibility:** Other client versions and modpacks have not been certified. Mods replacing `battleVehicleMarkersApp.swf` may conflict. Do not install two Unicum variants together.
-
-The images used in this page are documented in [screenshots/README.md](screenshots/README.md). Real game screenshots and promotional artwork are intentionally distinguished.
-
 ## Features
 
 - Players panels and loading screen: readable text with WNX band accents and
@@ -79,7 +68,13 @@ settings are high-contrast text overrides in the redesigned rosters.
 
 ## Update 0.9.18
 
-Adds configurable loading, battle-panel, Tab and overhead-marker presentation; a saved English/Ukrainian settings language; and fixes the blank optional modsSettingsApi window. The maintainer reports successful in-game testing of the development candidate. See [in-game settings](docs/IN_GAME_SETTINGS.md) for details and validation limits.
+The published v0.9.18 release adds configurable loading, battle-panel, Tab and
+overhead-marker presentation; a saved English/Ukrainian settings language; and
+a fix for the blank optional modsSettingsApi window. The maintainer reports
+successful in-game testing of the development candidate, including settings,
+battle panels, Alt and Tab. This does not certify every client, modpack or
+settings combination. See [in-game settings](docs/IN_GAME_SETTINGS.md) for
+configuration details and remaining validation limits.
 
 ## Update 0.9.17
 
@@ -107,11 +102,15 @@ Never load another Unicum.gg version or the development bootstrap alongside it.
 
 ## Installation and removal
 
-The current [0.9.18 installation ZIP](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/unicum.gg_0.9.18_wot_2.4.1.1.zip)
-and [standalone .wotmod](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/gg.unicum_0.9.18.wotmod)
-are published in the [v0.9.18 GitHub Release](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/tag/v0.9.18).
-The previous [0.9.17 installation ZIP](downloads/0.9.17/unicum.gg_0.9.17_wot_2.4.1.1.zip?raw=true)
-remains available for rollback. Do not distribute a mirror-built CI artifact.
+**Latest published version: v0.9.18** ([release notes and assets](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/tag/v0.9.18)).
+
+- [Installation ZIP — WoT EU 2.4.1.1](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/unicum.gg_0.9.18_wot_2.4.1.1.zip) (recommended; includes the required openwg_gameface component).
+- [Standalone .wotmod](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/gg.unicum_0.9.18.wotmod) (for users who already have compatible dependencies installed).
+- [SHA-256 checksums](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/SHA256SUMS.txt) and [client manifest](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases/download/v0.9.18/client.json).
+
+Earlier versions remain available in [GitHub Releases](https://github.com/gmrkinichuk-gif/unicum-wnx-ui/releases).
+Release binaries must be built against matching client files; mirror-built CI
+artifacts are for compilation checks only and must not be distributed.
 
 1. Close the client and back up existing Unicum settings and mod files.
 2. Remove the previous `gg.unicum_*.wotmod` and any Unicum dev bootstrap.
@@ -124,8 +123,8 @@ is `wnx`. modsSettingsApi and modsListApi are optional integrations.
 Version `0.9.18` adds WNX display controls and a saved
 **English / Українська** selector in the native **unicum.gg** settings tab and
 optional API page. See [in-game settings](docs/IN_GAME_SETTINGS.md) for the
-configuration schema, root cause and validation limits; 0.9.16 remains the
-verified baseline.
+configuration schema, root cause and validation limits. The v0.9.18 release is
+published, but not every optional API/modpack combination has been live-tested.
 
 To remove the mod, close the client and remove its `gg.unicum_*.wotmod`.
 Keep shared openwg_gameface if another installed mod uses it. Restore the backed
