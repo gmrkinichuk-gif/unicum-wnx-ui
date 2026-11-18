@@ -171,6 +171,12 @@ def main():
         check_garage_statement()
         check_loadout_setting()
         check_battles()
+        from checks.tracker_domain import run as check_tracker_domain
+        check_tracker_domain(workdir)
+        from checks.tracker_integration import run as check_tracker_integration
+        from checks.tracker_integration import check_escape as check_tracker_escape
+        check_tracker_integration(workdir)
+        check_tracker_escape()
         check_battle_lives()
         check_battle_squads()
         check_battle_tanks()

@@ -178,7 +178,7 @@ class Claiming(object):
         is both a free answer and the one way to be sure of not closing the
         player's results screen; see `_on_announced` for why that is at stake.
         """
-        if not self._sends():
+        if not self._sends() and getattr(self, '_tracker', None) is None:
             return
         if arena_id in self._settled or arena_id in self._asking:
             return

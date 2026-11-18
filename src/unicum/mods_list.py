@@ -95,6 +95,11 @@ class ModsListEntry(object):
         except Exception:
             _logger.exception('could not remove the modsListApi entry')
 
+    def retire(self):
+        """Retire the duplicate entry only after the custom window acknowledges opening."""
+        self._remove()
+        self._api = None
+
 
 def open_settings():
     """What the entry does: open the settings window, once its menu has closed."""
@@ -176,4 +181,6 @@ def _open_settings_entry():
 
 
 def install(session):
-    ModsListEntry(session).install()
+    entry = ModsListEntry(session)
+    entry.install()
+    return entry

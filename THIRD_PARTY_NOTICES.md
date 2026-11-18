@@ -17,6 +17,11 @@ checked against the supplied license files and exact npm lockfile versions on
 | Python, Node.js, Java | External interpreters and build tools | Not vendored or shipped; retain their distribution licenses when redistributing them |
 | playerglobal and WoT SWCs | External SDK/client terms | Compilation inputs linked externally; not included in this Git repository |
 | WoT battleVehicleMarkersApp.swf | External Wargaming client terms | Read from a matching client and patched only in ignored build output |
+| Unicum.gg WNX implementation | AGPL-3.0, Antoine Kingue | Python port and numerical test oracle from [ratings.ts at 65f19c0](https://github.com/unicum-gg/unicum.gg/blob/65f19c009bf434bb2c0c9061183b12c743f856fd/packages/shared/src/wot/ratings.ts) |
+
+The Tracker requests the public Tomato.gg expected values endpoint used by
+Unicum.gg and keeps the response in the client's local cache. The candidate
+does not redistribute a copy of the table.
 
 Full npm dependency inventory, including transitive and optional platform
 packages, is in [docs/DEPENDENCIES.json](docs/DEPENDENCIES.json). MIT, ISC, 0BSD,

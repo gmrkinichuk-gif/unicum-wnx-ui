@@ -59,7 +59,7 @@ def start(generation=0):
         link.install()
         window = settings_window.install(_session, settings, link)
         tab = settings_tab.install(_session, settings, link)
-        mods_list.install(_session)
+        menu = mods_list.install(_session)
         lookup = Lookup(_session, config.REGION)
         scales = RatingScales(_session)
         flags = FlagCache(_session)
@@ -89,7 +89,9 @@ def start(generation=0):
         # battles were written down, and it looks for their files at the
         # garage. It must exist by then.
         files = replays.install(_session, settings, link)
-        battles.install(_session, settings, link, tracks, files)
+        from unicum.tracker.service import Tracker
+        tracker = Tracker(_session)
+        battles.install(_session, settings, link, tracks, files, tracker)
         auto_reload.install(_session, settings)
         minimap_names.install(_session, settings, alt)
         chat = twitch.install(_session, settings, link)
@@ -98,6 +100,8 @@ def start(generation=0):
         sender = twitch_send.install(_session, link, chat)
         twitch_panel.install(_session, settings, chat, link, sender)
         twitch_window.install(_session, settings, chat, link)
+        from unicum.tracker import controller
+        controller.install(_session, settings, tracker, lookup, scales, tab, menu)
     except Exception:
         # A feature that fails halfway leaves the ones before it installed.
         # Without this the session is orphaned: the loader sees start() fail

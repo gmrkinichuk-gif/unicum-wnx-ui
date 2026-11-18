@@ -10,6 +10,7 @@ import logging
 import os
 import re
 from unicum.settings.wnx import DEFAULTS as WNX_DEFAULTS
+from unicum.tracker.options import DEFAULTS as TRACKER_DEFAULTS
 
 _logger = logging.getLogger('unicum.settings.defaults')
 
@@ -96,6 +97,7 @@ def _surface(surface):
     return values
 
 DEFAULTS = dict({
+    'wnxTracker': TRACKER_DEFAULTS,
     'wnxUI': WNX_DEFAULTS,
     'settingsLanguage': 'en',
     'enabled': True,

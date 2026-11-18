@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.19 development candidate
+
+- Add the garage WNX Session Tracker with Mini, Compact, Trend and Battles modes and a 10/20/30-battle window.
+- Record random battle results locally by account and region before the reporting gate. Retain raw metrics for up to 200 battles, including across restarts and expected-table updates.
+- Port the Unicum.gg WNX formula and cache the same expected values upstream consumes. Draw rolling aggregate WNX and separate per-battle bars with vehicle tooltips.
+- Add a bilingual Glass settings window with five categories, draft editing, and separate actions for tracker history, position and mod defaults.
+- Keep the native WoT settings tab available for recovery. See [Session Tracker QA](docs/SESSION_TRACKER_QA_UK.md) for the acceptance matrix.
+
 ## 0.9.18
 
 - Fix blank modsSettingsApi windows: keep values for button-backed labels when replacing API settings
