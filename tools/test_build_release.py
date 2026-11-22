@@ -30,7 +30,7 @@ class PackageIdentityTests(unittest.TestCase):
         gameface.mkdir()
         (gameface / 'net.openwg.gameface_1.2.2.wotmod').write_bytes(b'dependency')
         (gameface / 'LICENSE-gameface').write_text('Gameface license')
-        for name in ('LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md', 'PRIVACY.md'):
+        for name in ('LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md', 'PRIVACY.md', 'RELEASE_LICENSE.md'):
             (self.root / name).write_text(name)
         (self.root / 'licenses').mkdir()
         (self.root / 'licenses' / 'component.txt').write_text('component license')
@@ -70,6 +70,7 @@ class PackageIdentityTests(unittest.TestCase):
                              b'dependency')
             self.assertIn('licenses/unicum/licenses/component.txt', archive.namelist())
             self.assertIn('licenses/unicum/PRIVACY.md', archive.namelist())
+            self.assertIn('licenses/unicum/RELEASE_LICENSE.md', archive.namelist())
 
     def test_old_package_id_is_rejected(self):
         self.write_package(build_release.meta(self.version).replace('gg.unicum.wnxui', 'gg.unicum'))
@@ -110,6 +111,11 @@ class PackageIdentityTests(unittest.TestCase):
 
     def test_missing_license_is_rejected(self):
         self.rewrite_bundle(lambda n, d: [] if n == 'licenses/unicum/NOTICE' else [(n, d)])
+        with self.assertRaises(SystemExit):
+            self.verify()
+
+    def test_missing_release_license_is_rejected(self):
+        self.rewrite_bundle(lambda n, d: [] if n == 'licenses/unicum/RELEASE_LICENSE.md' else [(n, d)])
         with self.assertRaises(SystemExit):
             self.verify()
 
