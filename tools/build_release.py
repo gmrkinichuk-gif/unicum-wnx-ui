@@ -166,7 +166,7 @@ def members(stage: Path) -> list[tuple[Path, str]]:
     for name in ('gui/gen_resources/unicum_wnx_tab.json', 'mods/configs/res_map/unicum_wnx_tab.json',
                  'gui/gameface/mods/unicum/WnxTab/WnxTab.html', 'gui/gameface/mods/unicum/WnxTab/WnxTab.js'):
         out.append((RES / name, 'res/' + name))
-    for name in ('LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md', 'PRIVACY.md'):
+    for name in ('LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md', 'PRIVACY.md', 'RELEASE_LICENSE.md'):
         out.append((REPO / name, 'res/licenses/unicum/' + name))
     out += [(path, 'res/licenses/unicum/' + path.relative_to(REPO).as_posix())
             for path in sorted((REPO / 'licenses').rglob('*')) if path.is_file()]
@@ -228,7 +228,7 @@ def bundle(package: Path, version: str, client: str) -> None:
         archive.write(package, f'{folder}/{package.name}')
         archive.write(gameface[0], f'{folder}/net.openwg/{gameface[0].name}')
         archive.write(GAMEFACE / 'LICENSE-gameface', f'{folder}/net.openwg/LICENSE-gameface')
-        for name in ('LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md', 'PRIVACY.md'):
+        for name in ('LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md', 'PRIVACY.md', 'RELEASE_LICENSE.md'):
             archive.write(REPO / name, 'licenses/unicum/' + name)
         for path in sorted((REPO / 'licenses').rglob('*')):
             if path.is_file():
