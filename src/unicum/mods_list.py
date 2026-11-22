@@ -1,8 +1,8 @@
-"""An entry for the mod in poliroid's modsListApi menu ("Open settings").
+"""Settings navigation with the standalone modsListApi entry temporarily paused.
 
-Optional, like the settings window: without gui.modsListApi this does nothing.
-modsSettingsApi lists itself there, not the mods whose pages it holds, so a
-mod with settings only shows in that menu if it adds itself.
+The legacy registration below is not installed. Keep navigation for the
+account card, the optional API page and the native settings fallback; none
+of those needs our own gg.unicum.menu entry.
 
 Clicking it opens the settings window on the mod's page, with whichever
 window is installed, tried in this order:
@@ -19,8 +19,7 @@ window is installed, tried in this order:
 The icon is a resource file (config.ICON_RES_PATH), indexed when the client
 starts; modsListApi draws its default icon when the file is not there.
 
-The entry is removed when the session closes and added again by the next
-one, but the menu does not always let go of a callback: after a reload, a
+The old menu did not always let go of a callback: after a reload, a
 click reached the previous generation's method, whose module globals were
 already None. So the callback holds no code of this package. It is eval, a
 builtin, with a source string that imports the current module at click time.
@@ -181,6 +180,20 @@ def _open_settings_entry():
 
 
 def install(session):
-    entry = ModsListEntry(session)
-    entry.install()
-    return entry
+    """Retain existing open-settings actions without registering a menu item."""
+    global _session
+    if _session is session:
+        return None
+    _session = session
+
+    def closed():
+        global _session
+        if _session is session:
+            _session = None
+
+    # The account-card action still needs a Session-owned delayed open.
+    # Returning no entry also prevents Tracker's opened event from retiring
+    # that shared navigation context when there is no menu item to remove.
+    session.on_close(closed)
+    _logger.info('standalone modsListApi entry disabled; settings navigation retained')
+    return None

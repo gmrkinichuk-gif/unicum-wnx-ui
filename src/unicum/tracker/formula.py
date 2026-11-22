@@ -5,13 +5,19 @@ by upstream, and must not become a Python ZeroDivisionError or a fake zero.
 """
 import math
 
+from unicum.tracker.records import complete
+
 KEYS = ('wExpDmg', 'wExpSpot', 'wExpFrag', 'wExpAssist',
         'wDmg', 'wSpot', 'wFrag', 'wAssist')
 
 
 def finite(value):
-    return (isinstance(value, (int, long, float)) and not isinstance(value, bool)
-            and not math.isnan(value) and not math.isinf(value))
+    if not isinstance(value, (int, long, float)) or isinstance(value, bool):
+        return False
+    try:
+        return not math.isnan(value) and not math.isinf(value)
+    except OverflowError:
+        return False
 
 
 def divide(a, b):
@@ -71,6 +77,6 @@ def battle_tank(row):
 
 def aggregate(rows, expected):
     # A partial window is not the requested window. Never skip missing tanks.
-    if not rows or any(row['tankId'] not in expected for row in rows):
+    if not rows or any(not complete(row) or row['tankId'] not in expected for row in rows):
         return None
     return compute([battle_tank(row) for row in rows], expected)

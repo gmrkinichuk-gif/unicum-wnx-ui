@@ -22,13 +22,21 @@ python tools/install_dev.py --game "C:/Games/World_of_Tanks_EU" --python27 "C:/P
 This command intentionally installs into the game. Do not run it alongside a
 release `.wotmod`. Read AGENTS.md for Session teardown, shared services, API
 backoff and native-client integration constraints.
+The dev package is `gg.unicum.wnxui.dev_0.1.0.wotmod`; remove the previous
+`gg.unicum.dev_*.wotmod` and any loose bootstrap before switching. Release
+packages use `gg.unicum.wnxui`. Neither identity isolates runtime modules or
+resources; see [PACKAGE_IDENTITY.md](PACKAGE_IDENTITY.md).
 
 ## Checks
 
 - `python2.7 -B tools/selftest.py`: fake-client regression suite with live API
   checks where reachable; inspect output for explicit skips.
-- `python2.7 -B tools/release_check.py dist/gg.unicum_0.9.16.wotmod`: compiled
-  package and virtual-resource check outside the game.
+- `python -B -m unittest discover -s tools -p test_build_release.py`: package
+  identity and installation ZIP regression checks, including rejection cases.
+- `python2.7 -B tools/release_check.py dist/gg.unicum.wnxui_0.9.18.wotmod dist/unicum.gg_0.9.18_wot_2.4.1.1.zip`:
+  package ID, filename, stored members, ZIP layout, embedded bytes, license
+  notices, compiled startup and virtual-resource check outside the game.
+  Substitute the version being built; the ZIP argument is optional.
 - `node tools/check_roster_grid.mjs`: mirrored AS3 layout fixtures.
 - `node tools/check_battle_ui.mjs`: actual AS3 method bodies with display fixtures.
 - `node tools/check_settings_ui.mjs`: actual AS3 setting consumers and Apply transport.

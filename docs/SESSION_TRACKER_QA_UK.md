@@ -6,7 +6,7 @@ Candidate `0.9.19-dev.3` для клієнта `2.4.1.1 #993`. Початков�
 
 1. Закрийте WoT. Збережіть копії `mods/2.4.1.1/gg.unicum_0.9.18.wotmod` і `mods/configs/unicum/settings.json`. Якщо тестуєте скидання на наявній вибірці, окремо збережіть `mods/configs/unicum/wnx_tracker/`.
 2. Перенесіть попередній `.wotmod` за межі каталогів, які сканує клієнт. Залиште один Unicum `.wotmod` і одну копію сумісного `net.openwg.gameface`. У ZIP є оригінальна збірка Gameface 1.2.2 для інсталяцій, що її потребують.
-3. Покладіть `gg.unicum_0.9.19-dev.3.wotmod` у `mods/2.4.1.1/` та запустіть клієнт звичайним способом. Відкрийте налаштування шестернею в Tracker.
+3. Для нової збірки покладіть `gg.unicum.wnxui_0.9.19-dev.3.wotmod` у `mods/2.4.1.1/` та запустіть клієнт звичайним способом. Попередні збірки мали ім'я `gg.unicum_0.9.19-dev.3.wotmod`; обидва варіанти одночасно завантажувати не можна. Відкрийте налаштування шестернею в Tracker.
 4. Для відкату закрийте гру, поверніть `.wotmod` версії 0.9.18 і за потреби відновіть збережений `settings.json`. У 0.9.18 журнал Tracker не читається.
 
 ## Стан перевірок
@@ -30,7 +30,7 @@ Candidate `0.9.19-dev.3` для клієнта `2.4.1.1 #993`. Початков�
 python tools/build_as3.py --game F:/Games/World_of_Tanks_EU
 python tools/build_release.py --version 0.9.19-dev.3 --game F:/Games/World_of_Tanks_EU --python27 PATH_TO_PYTHON27
 & PATH_TO_PYTHON27 tools/selftest.py
-& PATH_TO_PYTHON27 tools/release_check.py dist/gg.unicum_0.9.19-dev.3.wotmod
+& PATH_TO_PYTHON27 tools/release_check.py dist/gg.unicum.wnxui_0.9.19-dev.3.wotmod dist/unicum.gg_0.9.19-dev.3_wot_2.4.1.1.zip
 node tools/check_tracker_ui.mjs
 ```
 

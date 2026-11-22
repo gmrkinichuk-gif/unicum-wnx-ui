@@ -32,7 +32,7 @@ REPO = Path(__file__).resolve().parent.parent
 TEMPLATE = REPO / 'dev' / 'mod_unicum_dev.py.in'
 SRC = REPO / 'src'
 STUB_NAME = 'mod_unicum_dev.py'
-MOD_ID = 'gg.unicum.dev'
+MOD_ID = 'gg.unicum.wnxui.dev'
 MOD_VERSION = '0.1.0'
 
 # The client's loader only picks up files named mod_*.py or mod_*.pyc, and

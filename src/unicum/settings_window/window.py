@@ -32,13 +32,6 @@ def reset_defaults(settings):
     from unicum.settings import DEFAULTS
     language = settings['settingsLanguage']
     settings.update(json.loads(json.dumps(DEFAULTS)))
-    from unicum import views
-    for view in (views.lobby_view(), views.battle_view()):
-        if view is not None:
-            try:
-                view.resetSettingsTab()
-            except Exception:
-                _logger.debug('settings view cannot clear its draft', exc_info=True)
     _logger.info('the settings were put back to their defaults')
     try:
         from gui import SystemMessages
@@ -54,7 +47,7 @@ def handle_button(var, settings, content, session=None):
     if var == RESET_VAR:
         confirm_reset(settings, session)
         return True
-    return open_link(var, content)
+    return False
 
 
 def confirm_reset(settings, session):
@@ -74,23 +67,6 @@ def confirm_reset(settings, session):
             ConfirmDialogButtons(translated('Reset', language), translated('Cancel', language))), answered)
     except Exception:
         _logger.exception('could not show the reset confirmation; settings unchanged')
-
-def link_url(var, content):
-    """Where a link button goes, or None for a variable that is not one."""
-    from unicum import tank_button
-    if var == SUPPORT_VAR:
-        return tank_button.support_url(content)
-    return {DISCORD_VAR: DISCORD_URL, SOURCE_VAR: SOURCE_URL}.get(var)
-
-def open_link(var, content):
-    """A link button's page in the player's browser; True if it was one."""
-    url = link_url(var, content)
-    if url is None:
-        return False
-    from unicum import tank_button
-    tank_button.open_url(url)
-    return True
-
 
 class SettingsWindow(object):
 
@@ -183,7 +159,9 @@ class SettingsWindow(object):
         described = template(self._settings.values(), channel, writable, card_shown,
                                                    supporter, hidden, battles_hidden,
                                                    drawing=self._drawing)
-        values = to_window(self._settings.values(), card_shown, hidden, battles_hidden)
+        from unicum import profile
+        described = profile.api_page(described)
+        values = profile.window_values(to_window(self._settings.values(), card_shown, hidden, battles_hidden))
         fields = [row['varName'] for column in ('column1', 'column2')
                   for row in described.get(column, []) if 'varName' in row]
         missing = sorted(set(fields) - set(values))
@@ -208,8 +186,7 @@ class SettingsWindow(object):
             return
         if handle_button(var_name, self._settings, 'mods-list', self._session):
             return
-        if self._link is not None and var_name == CONNECT_VAR:
-            self._link.connect(linked_notice)
+
 
     def _on_settings(self):
         """Keep the window in step with a hand edit of settings.json."""
@@ -224,8 +201,9 @@ class SettingsWindow(object):
             self._unregister()
             self._register()
             return
-        self._api.updateModSettings(LINKAGE, to_window(self._settings.values(), self._card_shown(),
-                                                       self._hidden(), self._battles_hidden()))
+        from unicum.profile import window_values
+        self._api.updateModSettings(LINKAGE, window_values(to_window(self._settings.values(), self._card_shown(),
+                                                       self._hidden(), self._battles_hidden())))
 
     def _remove(self):
         self._alive = False

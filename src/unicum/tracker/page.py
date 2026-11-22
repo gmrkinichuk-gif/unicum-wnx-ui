@@ -1,11 +1,17 @@
 """Reorganize the complete native control catalog, without duplicating its schema."""
 from unicum.settings_window.codec import to_window
+from unicum.settings_window.native import native_page
+from unicum import profile
 from unicum.tracker import options
 from unicum.tracker.localize import translate
 
 CATEGORIES = ('General', 'WNX Tracker', 'Battle', 'Garage', 'Integrations')
 GENERAL = set(('enabled', 'settingsLanguage', 'metric', 'window', 'winrate',
                'battles', 'winrateDecimal', 'maxFlags', 'measurePerformance', 'resetDefaults'))
+
+
+def for_settings(values, expected):
+    return build(profile.native_page(native_page(values)), values, expected)
 
 
 def category(var):
@@ -55,10 +61,12 @@ def build(native, values, expected):
             ('opacity', 'Background opacity', options.OPACITIES)):
         output['WNX Tracker'].append({'kind': 'dropdown', 'var': 'tracker_' + key,
             'label': translate(label, language), 'value': window['tracker_' + key],
-            'offset': 0, 'options': [str(v) + ('%' if key == 'opacity' else '') for v in choices], 'group': ''})
+            'offset': 0, 'options': [translate(v, language) if key == 'mode' else
+                                      str(v) + ('%' if key == 'opacity' else '') for v in choices], 'group': ''})
     for var, label in (('tracker_reset', 'Reset statistics...'), ('tracker_position', 'Reset position')):
         output['WNX Tracker'].append({'kind': 'button', 'var': var, 'label': translate(label, language),
-                                     'word': translate('Reset', language), 'danger': var == 'tracker_reset', 'group': ''})
+                                     'word': translate('Reset' if var == 'tracker_reset' else 'Restore', language),
+                                     'danger': var == 'tracker_reset', 'group': ''})
     status = translate('Expected values', language) + ': ' + (expected.updated or translate('Unavailable', language))
     output['WNX Tracker'].append({'kind': 'text', 'label': status, 'group': ''})
-    return [{'id': key, 'title': translate(key, language), 'rows': output[key]} for key in CATEGORIES]
+    return [{'id': key, 'title': translate(key, language), 'rows': output[key]} for key in CATEGORIES if output[key]]

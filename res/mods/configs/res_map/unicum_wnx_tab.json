@@ -1,0 +1,12 @@
+[
+  {
+    "type": "Layout",
+    "path": "coui://gui/gameface/mods/unicum/WnxTab/WnxTab.html",
+    "parameters": {
+      "extension": "",
+      "entrance": "UnicumWnxTab",
+      "impl": "gameface"
+    },
+    "itemID": "UnicumWnxTab"
+  }
+]

@@ -1,9 +1,10 @@
 """Account-bound local consumer; never enables or invokes server uploading."""
 import logging
+import time
 
 from unicum import config
-from unicum.tracker.extract import extract
-from unicum.tracker.store import History
+from unicum.tracker.extract import extract, result_account
+from unicum.tracker.writer import HistoryWriter
 
 _logger = logging.getLogger('unicum.tracker')
 
@@ -20,44 +21,47 @@ class Tracker(object):
     def __init__(self, session):
         self.session, self.history, self.account = session, None, None
         self.revision = 0
-        self._pending = []
-        self._histories = {}
+        self._views = {}
+        self._requested = set()
+        self._writer = HistoryWriter(session, config.REGION)
 
     def identify(self):
         if playing_replay():
             return None
-        from unicum.game_link.proof import current_account_id
+        from unicum.tracker.identity import current_account_id
         account = current_account_id()
-        if account and account != self.account:
-            if account not in self._histories:
-                self._histories[account] = History(config.REGION, account)
-            self.history = self._histories[account]
-            self.account = account
+        if account and account not in self._requested:
+            self._writer.submit(account, 'load')
+            self._requested.add(account)
+        for owner, view in self._writer.updates():
+            self._views[owner] = view
+        view = self._views.get(account)
+        if account != self.account or view is not self.history:
+            self.account, self.history = account, view
             self.revision += 1
-        if account and self.history.retry():
-            self.revision += 1
-        if account and self._pending:
-            pending, self._pending = self._pending, []
-            for result in pending:
-                self.record(result)
         return account
 
     def record(self, results):
         if not self.session.alive or playing_replay():
             return
-        account = self.identify()
+        from unicum.tracker.identity import current_account_id
+        # A result's own avatar still names its owner during login transitions,
+        # including when a callback for the previous account arrives late.
+        current = current_account_id()
+        owner = result_account(results)
+        if owner and current and owner != current:
+            return
+        account = owner or current
         if not account:
-            if results not in self._pending:
-                self._pending = (self._pending + [results])[-20:]
-            _logger.warning('tracker result deferred: own account identity unavailable')
+            _logger.warning('tracker result has no verified account; waiting for a confirmed result')
             return
         row = extract(results, config.REGION, account)
-        if row is not None and self.history.add(row):
-            self.revision += 1
+        if row is not None:
+            self._writer.submit(account, 'add', row)
+            self._requested.add(account)
 
     def reset(self, identity):
         account = self.identify()
         if not account or (config.REGION, account) != identity:
             raise ValueError('tracker account changed during confirmation')
-        self.history.reset()
-        self.revision += 1
+        self._writer.submit(account, 'reset', time.time())

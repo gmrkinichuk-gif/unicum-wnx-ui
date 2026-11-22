@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.9.20
+
+- Match the Tracker settings window to the rating-tinted glass card.
+- Show Tracker mode, battle count and background opacity as direct localized choices.
+- Add a tinted gradient, edge highlights and soft shadows to the Tracker card and settings window.
+- Match graph tooltips and settings dropdowns to the glass panels, and show opacity settings as stepped sliders.
+- Remove the tab integrated into the game's Settings window. The hangar gear opens the mod's settings.
+- Ship a data-use notice listing the exact outbound request fields and local files.
+
+## 0.9.19-dev.9
+
+- Match the Mini and Compact Tracker card sizes and center both ratings and changes.
+- Integrate full mode labels and the native settings icon into the WNX-tinted header.
+- Move average damage and assist to the chart footer with native icons and remove the combined total and summary popup.
+
+## 0.9.19-dev.8
+
+- Restore the Tracker on the default hangar route after login and navigation.
+- Replace mode arrows with four directly selectable tabs.
+
+## 0.9.19-dev.7
+
+- Ship battle WNX, local Session Tracker and settings only.
+- Remove reporting, account integration, Twitch, language flags and unrelated UI from the shipped mod.
+- Restrict WNX network requests to public HTTPS reads and keep other players’ ratings in memory.
+- Limit the local tracker to its latest 60 own random battles and show it only in the foreground hangar.
+- Use a more compact tracker card with chart, rating and concise labels.
+
+Standalone settings shortcut maintenance (2026-11-18; no version change):
+pause registration of `gg.unicum.menu` while preserving the native settings
+tab, Tracker gear, optional API page and existing navigation. Add lifecycle,
+save/persistence and native-tab regression checks. The exact native-Apply
+disappearance cause remains unconfirmed; see [audit](docs/MENU_SHORTCUT_AUDIT.md).
+
+Package identity maintenance (2026-11-18; no version change): new builds use
+`gg.unicum.wnxui` and `gg.unicum.wnxui_<version>.wotmod`; dev packages use
+`gg.unicum.wnxui.dev`. Update both CI checks, package/installer validation and
+installation/removal documentation. Runtime namespaces, UI, WNX algorithms and
+published assets remain unchanged. See [identity audit](docs/PACKAGE_IDENTITY.md).
+
 ## 0.9.19 development candidate
 
 - Add the garage WNX Session Tracker with Mini, Compact, Trend and Battles modes and a 10/20/30-battle window.

@@ -83,12 +83,13 @@ class SettingsTab(object):
         linked = bool(link is not None and link.secret)
         channel = self._chat.channel if self._chat is not None else u''
         card_shown = not (link is not None and link.card_hidden)
-        return page.native_page(
+        from unicum.profile import native_page
+        return native_page(page.native_page(
             self._settings.values(), channel, linked and link.twitch == 'ready', card_shown,
             supporter=bool(link is not None and link.supporter),
             loadouts_hidden=bool(link is not None and link.loadouts_hidden),
             battles_hidden=link.battles_hidden if linked else None,
-            drawing=self._previewing())
+            drawing=self._previewing()))
 
     def _tick(self):
         for name, flash in (('lobby', views.lobby_view()), ('battle', views.battle_view())):
@@ -136,8 +137,7 @@ class SettingsTab(object):
         # Each button once, however many times the message names it.
         for var in dict.fromkeys(buttons):
             window.handle_button(var, self._settings, 'settings-tab', self._session)
-        if labels.CONNECT_VAR in buttons and self._link is not None:
-            self._link.connect(labels.linked_notice)
+
 
 
 def install(session, settings, link=None):

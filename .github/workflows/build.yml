@@ -31,17 +31,12 @@ jobs:
         with:
           path: build/as3/royale
           key: royale-${{ hashFiles('tools/build_as3.py') }}
-      - name: Build flag images and icons
-        run: |
-          npm --prefix tools/flags ci --no-audit --no-fund
-          npm --prefix tools/flags run build
-          npm --prefix tools/badges ci --no-audit --no-fund
-          npm --prefix tools/badges run icon
       - name: Check UI geometry
         run: |
           node tools/check_roster_grid.mjs
           node tools/check_battle_ui.mjs
           node tools/check_settings_ui.mjs
+          node tools/check_tracker_ui.mjs
       - name: Compile with mirrored client inputs (never distribute)
         # The initial run timed out after 35 minutes without output. Cap this
         # dependency/compile step separately and stream Python progress logs.
@@ -53,6 +48,6 @@ jobs:
           chmod +x tools/ci/python27
           version=$(sed -nE 's/^## ([0-9]+\.[0-9]+\.[0-9]+(-dev\.[0-9]+)?)$/\1/p' CHANGELOG.md | head -1)
           test -n "$version"
+          python -B -m unittest discover -s tools -p 'test_build_release.py'
           python tools/build_release.py --version "$version" --python27 tools/ci/python27 --game-version 0.0.0.0
-          tools/ci/python27 -B tools/selftest.py
-          tools/ci/python27 -B tools/release_check.py "dist/gg.unicum_$version.wotmod"
+          tools/ci/python27 -B tools/release_check.py "dist/gg.unicum.wnxui_$version.wotmod" "dist/unicum.gg_${version}_wot_0.0.0.0.zip"

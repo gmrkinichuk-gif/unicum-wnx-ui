@@ -175,8 +175,10 @@ def main():
         check_tracker_domain(workdir)
         from checks.tracker_integration import run as check_tracker_integration
         from checks.tracker_integration import check_escape as check_tracker_escape
+        from checks.tracker_settings import run as check_tracker_settings
         check_tracker_integration(workdir)
         check_tracker_escape()
+        check_tracker_settings(workdir)
         check_battle_lives()
         check_battle_squads()
         check_battle_tanks()

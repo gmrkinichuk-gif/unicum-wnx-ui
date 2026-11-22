@@ -21,6 +21,7 @@ package unicum.tracker
       private var _tooltip:Sprite = new Sprite();
       private var _state:Object;
       private var _out:String = "";
+      private var _saveSerial:uint = 0;
       private var _saved:String = "";
       private var _viewportWidth:Number = 1920;
       private var _viewportHeight:Number = 1080;
@@ -74,6 +75,14 @@ package unicum.tracker
       {
          if(_state != null) { action.account = _state.account; action.region = _state.region; }
          _out += Wire.stringify(action) + "\n";
+      }
+
+      public function applySettings(values:Object) : uint
+      {
+         var request:uint = ++_saveSerial;
+         if(request == 0) request = ++_saveSerial;
+         send({kind:"apply",request:request,values:values});
+         return request;
       }
 
       public function take() : String
@@ -136,11 +145,10 @@ package unicum.tracker
 
       public function clampWidget() : void
       {
-         var scale:Number = Geometry.fit(_viewportWidth, _viewportHeight, _widget.panelWidth, _widget.totalHeight);
+         var scale:Number = Geometry.fit(_viewportWidth, _viewportHeight, _widget.panelWidth, _widget.panelHeight);
          _widget.scaleX = _widget.scaleY = scale;
          _widget.x = Geometry.clamp(_widget.x, _viewportWidth, _widget.panelWidth * scale);
          _widget.y = Geometry.clamp(_widget.y, _viewportHeight, _widget.panelHeight * scale);
-         _widget.placeDetails(_viewportHeight);
       }
 
       public function savePosition() : void
@@ -172,7 +180,7 @@ package unicum.tracker
 
       public function openSettings() : void
       {
-         if(_state == null || _settings != null) return;
+         if(!visible || _state == null || _settings != null) return;
          tooltip(null, false, this);
          _shield = new Sprite();
          _shield.addEventListener(MouseEvent.MOUSE_DOWN, absorb);
@@ -181,6 +189,8 @@ package unicum.tracker
          addChild(_shield);
          _settings = new TrackerSettings(this, _state);
          addChild(_settings);
+         _widget.suspend();
+         _widget.visible = false;
          _settings.activate();
          layout();
          send({kind:"opened"});
@@ -224,6 +234,7 @@ package unicum.tracker
             _settings.dispose();
             removeChild(_settings);
             _settings = null;
+            _widget.visible = true;
          }
          if(_shield != null)
          {
@@ -245,23 +256,31 @@ package unicum.tracker
          Glass.clear(_tooltip);
          if(row == null || _settings != null) return;
          var color:uint = uint(String(_state.color).replace("#", "0x"));
-         var lines:String = "WNX  " + Glass.number(row.wnx) + "\n" + row.time;
+         var missing:Boolean = row.wnx == null;
+         var height:Number = (bars ? 105 : 52) + (missing ? 33 : 0);
+         var surface:Sprite = Glass.raisedPanel(_tooltip, 268, height, color, 0.98);
+         var heading:String = "WNX  " + Glass.number(row.wnx);
+         var time:String = row.time;
+         var top:Number = 5;
          if(bars)
          {
-            lines = row.tankName + (row.tier != null ? "  \u00b7  " + row.tier : "") + "\n" + lines;
-            if(row.winnerResult != null) lines += "  " + word(row.winnerResult);
-            lines += "\n" + word("Damage") + "  " + Glass.number(row.damageDealt);
-            lines += "   " + word("Assist") + "  " + Glass.number(Number(row.damageAssistedRadio) + Number(row.damageAssistedTrack));
-            lines += "\n" + word("Combined") + "  " + Glass.number(Number(row.damageDealt) + Number(row.damageAssistedRadio) + Number(row.damageAssistedTrack));
+            Card.line(_tooltip, row.tankName + (row.tier != null ? "  \u00b7  " + row.tier : ""),
+                      10, top, 248, 22, 13, 0xe3e8f2);
+            top += 21;
+            if(row.winnerResult != null) time += "  " + word(row.winnerResult);
+            var assist:* = row.damageAssistedRadio == null || row.damageAssistedTrack == null ? null :
+                           Number(row.damageAssistedRadio) + Number(row.damageAssistedTrack);
+            Card.rule(surface, 10, 70, 248, 0);
+            Card.metric(_tooltip, TrackerIcons.DAMAGE, row.damageDealt, 72, 74);
+            Card.metric(_tooltip, TrackerIcons.ASSIST, assist, 196, 74);
          }
-         else lines += "\n#" + row.arenaUniqueId;
-         if(row.wnx == null) lines += "\n" + word("WNX temporarily unavailable");
-         var height:Number = bars ? 158 : 96;
-         Glass.panel(_tooltip, 268, height, color, 1);
-         Glass.text(_tooltip, lines, 10, 8, 248, height - 12, 12);
+         Card.line(_tooltip, heading, 10, top, 248, 24, 16, color);
+         Card.line(_tooltip, time, 10, top + 23, 248, 18, 11, 0xaeb9c8);
+         if(missing)
+            Glass.text(_tooltip, row.message || word("WNX temporarily unavailable"), 10, height - 32, 248, 30, 11);
          var point:Point = globalToLocal(target.localToGlobal(new Point(target.width / 2, target.height)));
          _tooltip.x = Geometry.clamp(point.x - 134, _viewportWidth, 268);
-         var below:Number = Math.max(point.y + 14, _widget.y + 32 * _widget.scaleY);
+         var below:Number = _widget.y + _widget.panelHeight * _widget.scaleY + 8;
          _tooltip.y = Geometry.clamp(below + height <= _viewportHeight - 8 ? below : _widget.y - height - 8,
                                      _viewportHeight, height);
          setChildIndex(_tooltip, numChildren - 1);

@@ -8,7 +8,6 @@ from __future__ import absolute_import
 
 import json
 import logging
-import os
 import time
 
 from unicum import config
@@ -16,6 +15,7 @@ from unicum.game_link.proof import (ME_PATH, STORE, TWITCH_READY, bearer,
                                     connect_url, current_account_id,
                                     new_secret, read_me, read_privacy,
                                     read_store, secret_hash)
+from unicum.runtime.files import recover, write_json
 
 _logger = logging.getLogger('unicum.game_link.link')
 
@@ -80,17 +80,24 @@ class GameLink(object):
         return self._account in self._hidden
 
     def hide_card(self):
-        if self._account and self._account not in self._hidden:
-            self._hidden.append(self._account)
-            self._save()
-            self._changed()
+        return self._set_card_hidden(True)
 
     def show_card(self):
-        """Bring the card back for the account logged in, the settings window's way."""
-        if self._account and self._account in self._hidden:
-            self._hidden.remove(self._account)
-            self._save()
-            self._changed()
+        return self._set_card_hidden(False)
+
+    def _set_card_hidden(self, hidden):
+        account = self._account
+        if not account:
+            return False
+        previous = self._hidden
+        if hidden == (account in previous):
+            return True
+        self._hidden = previous + [account] if hidden else [value for value in previous if value != account]
+        if not self._save():
+            self._hidden = previous
+            return False
+        self._changed()
+        return True
 
     def on_change(self, callback):
         self._listeners.append(callback)
@@ -178,63 +185,44 @@ class GameLink(object):
             self._changed()
 
     def hide_loadouts(self, hidden, done=None):
-        """Take this player's loadouts off their page, or put them back.
-
-        The site owns the answer, so this asks rather than decides: the local
-        flag only moves once the site says it has. A switch that flipped on
-        the spot and silently failed would be the worst of both, telling the
-        player they are hidden while their page still shows everything.
-        """
-        secret = self.secret
-        if not secret:
-            if done:
-                done(False)
-            return
-
-        def answered(response):
-            if getattr(response, 'responseCode', None) != 200:
-                _logger.warning('the site would not change the loadout privacy (HTTP %s)',
-                                getattr(response, 'responseCode', None))
-                if done:
-                    done(False)
-                return
-            self._set_privacy(self.supporter, bool(hidden), self.battles_hidden)
-            if done:
-                done(True)
-
-        self._session.fetch(ME_PATH % config.API_BASE.rstrip('/'), answered,
-                            headers=bearer(secret), timeout=config.API_TIMEOUT,
-                            method='PATCH',
-                            post_data=json.dumps({'loadoutsHidden': bool(hidden)}))
+        """Change whether the site publishes this account's loadouts."""
+        self._hide('loadoutsHidden', hidden, done)
 
     def hide_battles(self, hidden, done=None):
-        """Take this player's battle list off their page, or put it back.
+        """Change whether the site publishes this account's battle list."""
+        self._hide('battlesHidden', hidden, done)
 
-        The same exchange as `hide_loadouts`, for every linked account rather
-        than supporters alone. It hides the list and nothing else: the battles
-        keep being sent, which is not a choice this mod offers.
-        """
-        secret = self.secret
+    def _hide(self, field, hidden, done):
+        # Only the site can confirm the saved value. A response for an old
+        # link must not update the flags of a newly signed-in account.
+        account, secret = self._account, self.secret
         if not secret:
             if done:
                 done(False)
             return
 
         def answered(response):
-            if getattr(response, 'responseCode', None) != 200:
-                _logger.warning('the site would not change the battle privacy (HTTP %s)',
-                                getattr(response, 'responseCode', None))
+            if self._account != account or self.secret != secret:
                 if done:
                     done(False)
                 return
-            self._set_privacy(self.supporter, self.loadouts_hidden, bool(hidden))
+            if getattr(response, 'responseCode', None) != 200:
+                _logger.warning('the site would not change %s (HTTP %s)',
+                                field, getattr(response, 'responseCode', None))
+                if done:
+                    done(False)
+                return
+            if field == 'loadoutsHidden':
+                self._set_privacy(self.supporter, bool(hidden), self.battles_hidden)
+            else:
+                self._set_privacy(self.supporter, self.loadouts_hidden, bool(hidden))
             if done:
                 done(True)
 
         self._session.fetch(ME_PATH % config.API_BASE.rstrip('/'), answered,
                             headers=bearer(secret), timeout=config.API_TIMEOUT,
                             method='PATCH',
-                            post_data=json.dumps({'battlesHidden': bool(hidden)}))
+                            post_data=json.dumps({field: bool(hidden)}))
 
     def _forget(self):
         self._links.pop(self._account, None)
@@ -303,6 +291,7 @@ class GameLink(object):
 
     def _load(self):
         try:
+            recover(self._store)
             with open(self._store) as handle:
                 return read_store(json.load(handle))
         except (IOError, OSError, ValueError):
@@ -310,14 +299,12 @@ class GameLink(object):
 
     def _save(self):
         try:
-            directory = os.path.dirname(self._store)
-            if directory and not os.path.isdir(directory):
-                os.makedirs(directory)
             links = dict((account, secret) for account, secret in self._links.items() if account)
-            with open(self._store, 'w') as handle:
-                json.dump({'links': links, 'cardHidden': self._hidden}, handle)
-        except (IOError, OSError):
+            write_json(self._store, {'links': links, 'cardHidden': self._hidden})
+            return True
+        except (IOError, OSError, ValueError, TypeError):
             _logger.exception('could not save the account links')
+            return False
 
 class _Attempt(object):
     """One linking: from opening the player's browser to the account answering."""

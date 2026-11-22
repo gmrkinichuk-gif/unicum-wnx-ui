@@ -16,7 +16,7 @@
 ## 2. Install cleanly
 
 - [ ] Close WoT; back up Unicum settings and the previous working mod package.
-- [ ] Install **one** Unicum version. Do not run the dev bootstrap or another `gg.unicum_*.wotmod` alongside the candidate.
+- [ ] Install **one** Unicum version. Move all previous `gg.unicum_*.wotmod` and `gg.unicum.wnxui_*.wotmod` outside scanned game folders, plus any old/new dev bootstrap. A distinct Package ID does not isolate shared runtime resources; see [PACKAGE_IDENTITY.md](PACKAGE_IDENTITY.md).
 - [ ] Check compatibility with the installed modpack, especially any mod changing `battleVehicleMarkersApp.swf`.
 - [ ] Launch the game and inspect `game.log` for Unicum startup failures, AS3/Scaleform errors and leaked hooks. Keep private game logs out of Git.
 

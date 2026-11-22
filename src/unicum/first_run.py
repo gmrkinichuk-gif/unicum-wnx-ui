@@ -48,8 +48,7 @@ MARKER_PNG = (
 
 # Everything the mod writes images into during a session. Both are drawn from
 # by name, so both have to be in the index before the first one is written.
-IMAGE_DIRS = ('gui/maps/icons/unicum/badges',
-              'gui/maps/icons/unicum/twitch/badges')
+IMAGE_DIRS = ('gui/maps/icons/unicum/badges',)
 
 
 def prepare():

@@ -1,7 +1,9 @@
 package unicum.tracker
 {
+   import flash.display.GradientType;
    import flash.display.Sprite;
-   import flash.events.MouseEvent;
+   import flash.filters.DropShadowFilter;
+   import flash.geom.Matrix;
    import flash.text.TextField;
    import flash.text.TextFormat;
 
@@ -19,13 +21,40 @@ package unicum.tracker
                 uint(((base & 255) * (1 - amount) + (color & 255) * amount));
       }
 
-      public static function panel(target:Sprite, w:Number, h:Number, color:uint, opacity:Number = 0.9) : void
+      public static function verticalFill(target:Sprite, w:Number, h:Number, colors:Array,
+                                          opacity:Number, stops:Array) : void
       {
+         var matrix:Matrix = new Matrix();
+         matrix.createGradientBox(w, h, Math.PI / 2);
+         var alphas:Array = [];
+         for each(var color:uint in colors) alphas.push(opacity);
+         target.graphics.beginGradientFill(GradientType.LINEAR, colors, alphas, stops, matrix);
+      }
+
+      public static function raisedPanel(target:Sprite, w:Number, h:Number, color:uint, opacity:Number) : Sprite
+      {
+         // Keep the hit surface at the card's dimensions, outside the shadow.
          target.graphics.clear();
-         target.graphics.lineStyle(1, mix(0x66717e, color, 0.3), 0.55);
-         target.graphics.beginFill(tint(color), opacity);
+         target.graphics.beginFill(0, 0.001);
          target.graphics.drawRoundRect(0, 0, w, h, 12, 12);
          target.graphics.endFill();
+
+         var surface:Sprite = new Sprite();
+         surface.mouseEnabled = surface.mouseChildren = false;
+         surface.filters = [new DropShadowFilter(4, 90, 0x04070c, 0.42, 8, 8)];
+         surface.graphics.lineStyle(1, mix(0x66717e, color, 0.3), 0.6 * opacity);
+         verticalFill(surface, w, h, [mix(0x303948, color, 0.23), tint(color), mix(0x10141d, color, 0.12)],
+                      opacity, [0, 106, 255]);
+         surface.graphics.drawRoundRect(0, 0, w, h, 12, 12);
+         surface.graphics.endFill();
+         surface.graphics.lineStyle(1, mix(0xdde7f6, color, 0.42), 0.64 * opacity);
+         surface.graphics.moveTo(7, 1);
+         surface.graphics.lineTo(w - 7, 1);
+         surface.graphics.lineStyle(1, 0x05070d, 0.65 * opacity);
+         surface.graphics.moveTo(7, h - 1);
+         surface.graphics.lineTo(w - 7, h - 1);
+         target.addChildAt(surface, 0);
+         return surface;
       }
 
       public static function text(parent:Sprite, value:String, x:Number, y:Number,
@@ -44,32 +73,6 @@ package unicum.tracker
          field.mouseEnabled = false;
          parent.addChild(field);
          return field;
-      }
-
-      public static function button(parent:Sprite, label:String, x:Number, y:Number,
-                                    w:Number, callback:Function, danger:Boolean = false,
-                                    selected:Boolean = false, h:Number = 28) : Sprite
-      {
-         var button:Sprite = new Sprite();
-         button.x = x;
-         button.y = y;
-         button.buttonMode = true;
-         button.tabEnabled = true;
-         button.graphics.lineStyle(1, danger ? 0xb84d51 : 0x7c8494, danger ? 0.8 : 0.35);
-         button.graphics.beginFill(danger ? 0x642c32 : (selected ? 0x4a465b : 0x2e3440), 0.75);
-         button.graphics.drawRoundRect(0, 0, w, h, 6, 6);
-         button.graphics.endFill();
-         var field:TextField = text(button, label, 6, (h - 22) / 2, w - 12, 22, 12,
-                                    danger ? 0xf0a0a3 : 0xd9dde4);
-         var format:TextFormat = field.defaultTextFormat;
-         format.align = "center";
-         field.setTextFormat(format);
-         button.addEventListener(MouseEvent.MOUSE_DOWN, function(event:MouseEvent):void { event.stopPropagation(); });
-         button.addEventListener(MouseEvent.CLICK, function(event:MouseEvent):void {
-            event.stopPropagation(); callback();
-         });
-         parent.addChild(button);
-         return button;
       }
 
       public static function clear(target:Sprite) : void

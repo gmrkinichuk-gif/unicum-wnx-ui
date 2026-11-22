@@ -6,8 +6,8 @@ package unicum.tracker
 
    public class Graph extends Sprite
    {
-      public static const WIDTH:Number = 300;
-      public static const HEIGHT:Number = 76;
+      public static const WIDTH:Number = 252;
+      public static const HEIGHT:Number = 60;
 
       public function Graph(rows:Array, bars:Boolean, color:uint, hover:Function)
       {
@@ -66,7 +66,8 @@ package unicum.tracker
             bind(hit, row, hover, bars);
             plot.addChild(hit);
             if(i == 0 || (i + 1) % 5 == 0 || i == count - 1)
-               Glass.text(this, String(i + 1), Math.min(WIDTH - 16, i * step), HEIGHT + 16, 25, 15, 10, 0x909aa8);
+               Card.line(this, String(i + 1), Math.max(0, Math.min(WIDTH - 25, px - 12.5)),
+                         HEIGHT + 16, 25, 15, 10, 0x909aa8);
          }
       }
 

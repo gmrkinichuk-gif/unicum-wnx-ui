@@ -137,7 +137,7 @@ class Session(object):
             tick.__name__ = '%s.%s' % (owner.__class__.__name__, tick.__name__)
         self.callback(interval, tick)
 
-    def fetch(self, url, callback, headers=None, timeout=10.0, method='GET', post_data=''):
+    def fetch(self, url, callback, headers=None, timeout=10.0, method='GET', post_data=None):
         """BigWorld.fetchURL whose response cannot reach a dead session.
 
         There is no way to cancel a request in flight, so the gate is the
@@ -149,6 +149,9 @@ class Session(object):
         response object (`.responseCode`, `.body`, `.headers()`).
         """
 
+        from unicum.profile import permits
+        if method != 'GET' or not permits(url, headers, post_data):
+            raise ValueError('request outside the WNX read-only network boundary')
         timed = perf.track(_where(callback), callback)
 
         def guarded(response):

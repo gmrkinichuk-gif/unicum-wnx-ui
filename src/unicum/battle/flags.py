@@ -261,10 +261,7 @@ class BattleFlags(Drawing):
                      answered, len(pairs), on_mode)
 
     def _report(self, batch):
-        resolved = []
-        for account_id in batch:
-            entry = self._lookup.get(PLAYERS, account_id)
-            if entry is not None and entry.countries:
-                resolved.append((account_id, entry.countries[0]))
-        _logger.info('resolved %s/%s: %s', len(resolved), len(batch), resolved)
+        resolved = sum(1 for account_id in batch
+                       if getattr(self._lookup.get(PLAYERS, account_id), 'known', False))
+        _logger.info('resolved %s/%s players', resolved, len(batch))
         self._redraw()

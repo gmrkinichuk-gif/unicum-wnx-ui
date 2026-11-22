@@ -250,7 +250,7 @@ def template(values, channel=u'', linked=False, card_shown=True,
 
     battle = [
         _heading(templates, 'Battle'),
-        show('battle'),
+        checkbox('Show battle ratings', 'battleRating'),
         checkbox('Team average', 'battleAverage'),
         choice(FIGURES_LABEL, _figures_key('battle'), list(FIGURE_LABELS),
                tooltip=_FIGURES_TOOLTIP),

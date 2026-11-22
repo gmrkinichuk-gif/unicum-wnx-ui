@@ -6,7 +6,7 @@ import os
 import time
 
 from unicum.tracker.formula import finite
-from unicum.tracker.store import recover, replace
+from unicum.runtime.files import recover, replace
 
 ORIGIN = 'https://api.tomato.gg/api/wnx/wnx-expected-values.json'
 STORE = os.path.join('mods', 'configs', 'unicum', 'wnx_tracker', 'expected.json')

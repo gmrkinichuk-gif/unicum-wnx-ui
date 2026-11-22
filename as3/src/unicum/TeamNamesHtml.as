@@ -100,45 +100,9 @@ package unicum
       public var rosterStatsEnabled:Boolean = false;
       public var rosterOptions:String = "";
 
-      // The unicum.gg tab of the settings window, opened from the battle's menu.
-      private var _settingsTabs:SettingsTabs;
-
-      public function get settingsTab() : String
-      {
-         return "";
-      }
-
-      // The page of the settings window's unicum.gg tab (src/unicum/settings_tab.py).
-      public function set settingsTab(value:String) : void
-      {
-         SettingsTab.page = value;
-      }
-
-      // What the tab's buttons, Apply or OK sent, for Python to take. A call,
-      // not a property: the proxy Python holds this view by reads a property
-      // once and answers with that value ever after, so anything the tab sent
-      // later would pile up unread. The call hands the lines over and leaves
-      // none behind.
-      public function takeSettingsTabOut() : String
-      {
-         return SettingsTab.take();
-      }
-      public function resetSettingsTab() : void
-      {
-         SettingsTab.discardDraft();
-      }
-
       public function takePanelMetrics() : String
       {
          return this._markers.animationMetrics();
-      }
-
-      // The same, as a property, for a client whose proxy cannot call it.
-      // Read once by the proxy and answered from its copy ever after, so it
-      // is a fallback only.
-      public function get settingsTabOut() : String
-      {
-         return SettingsTab.take();
       }
 
       public function TeamNamesHtml()
@@ -156,7 +120,6 @@ package unicum
             App.stage.addEventListener(Event.ADDED, this.onAdded, true, 0, true);
          }
          addEventListener(Event.ENTER_FRAME, this.onFrame);
-         this._settingsTabs = new SettingsTabs(this);
          // Screens drawn before this view loaded: Onslaught builds its stats
          // table first, and a hot reload finds everything already there. When
          // this finds nothing, `rescan` keeps looking rather than giving up.
@@ -173,7 +136,6 @@ package unicum
             App.stage.removeEventListener(Event.ADDED, this.onAdded, true);
          }
          removeEventListener(Event.ENTER_FRAME, this.onFrame);
-         this._settingsTabs.dispose();
          this._fields = new Dictionary(true);
          this._stripped = new Dictionary(true);
          this._searched = new Dictionary(true);

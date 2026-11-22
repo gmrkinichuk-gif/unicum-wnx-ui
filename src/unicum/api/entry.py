@@ -91,16 +91,14 @@ class Entry(object):
 
     @classmethod
     def from_api(cls, kind, raw, fetched_at):
-        clan = raw.get('clan')
+        ratings = raw.get('ratings')
+        ratings = ratings if isinstance(ratings, dict) else {}
         return cls(
             known=True,
-            name=raw.get('nickname') if kind == PLAYERS else raw.get('tag'),
-            clan=clan if isinstance(clan, dict) else None,
-            languages=raw.get('languages') or [],
-            countries=raw.get('countries') or [],
-            source=raw.get('languageSource') or raw.get('source'),
-            ratings=raw.get('ratings') or {},
-            members=raw.get('membersCount'),
+            ratings=dict((period, dict((key, value) for key, value in metrics.items()
+                                       if key in ('wnx', 'winrate', 'battles') and isinstance(value, (int, long, float))))
+                         for period, metrics in ratings.items()
+                         if period in ('total', 'recent') and isinstance(metrics, dict)),
             fetched_at=fetched_at)
 
     def to_store(self):

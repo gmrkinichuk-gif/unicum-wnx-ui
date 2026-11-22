@@ -100,7 +100,7 @@ def native_page(values, channel=u'', linked=False, card_shown=True,
 
     tab(u'Battle')
     group(0, u'What and when')
-    show('battle')
+    checkbox(u'Show battle ratings', 'battleRating')
     checkbox(u'Team average', 'battleAverage')
     dropdown(FIGURES_LABEL, _figures_key('battle'), list(FIGURE_LABELS))
     group(0, u'WNX in battle')

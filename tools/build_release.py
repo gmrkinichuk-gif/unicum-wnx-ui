@@ -2,10 +2,10 @@
 
     python tools/build_release.py --version 1.0.0
 
-Writes dist/gg.unicum_<version>.wotmod, and dist/unicum.gg_<version>_wot_<game version>.zip laid
+Writes dist/gg.unicum.wnxui_<version>.wotmod, and dist/unicum.gg_<version>_wot_<game version>.zip laid
 out as the game folder, which is what is published:
 
-  mods/<game version>/gg.unicum_<version>.wotmod
+  mods/<game version>/gg.unicum.wnxui_<version>.wotmod
   mods/<game version>/net.openwg/net.openwg.gameface_<its version>.wotmod
 
 openwg_gameface is what the garage features need. It is bundled from
@@ -13,29 +13,10 @@ vendor/openwg/ (MIT, its license beside it) under net.openwg/, the folder every
 mod that ships it uses, so a copy from another mod is overwritten rather than
 loaded twice. Update it by replacing that file.
 
-The .wotmod holds:
-
-  res/scripts/client/gui/mods/mod_unicum.pyc   the entry point (dev/mod_unicum.py.in)
-  res/scripts/client/unicum/...                the package, compiled with the client's
-                                               Python 2.7, and its resources (web/,
-                                               badge_glyphs.json), read through ResMgr
-                                               there (src/unicum/resources.py)
-  res/gui/flash/*.swf                          the AS3 views and the patched markers app
-  res/gui/maps/icons/unicum/...                flags, the mod's icons
-  res/gui/gameface/..., res/mods/configs/...   res/ as it is: the Gameface modules (the hangar
-                                               button, the Twitch window) and their res_map entries
-
-Build its inputs first, as for development:
-
-    cd tools/flags && npm install && npm run build && cd ../..
-    cd tools/badges && npm install && npm run icon && cd ../..
-    python tools/build_as3.py --game "C:/Games/World_of_Tanks_EU"
-
-Stored, never deflated, like the dev bootstrap's package: the client rejected
-deflated members in 2.3.1.3. The rating badges are not in it: the client
-draws them (src/unicum/badge_png.py).
-
-Runs on Python 3; compiling needs the client's Python 2.7 (--python27).
+The package contains the compiled WNX runtime, AS3 views, the battle Tab
+Gameface loader and its resource mappings, and notices. Build the AS3 inputs
+with tools/build_as3.py --game before packaging. The inner package uses
+ZIP_STORED for the game loader and needs the real Python 2.7 interpreter.
 """
 from __future__ import annotations
 
@@ -49,14 +30,14 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-from install_dev import AS3_BUILD, FLAGS_BUILD, ICON_BUILD, PYTHON27_CANDIDATES, RES
+from install_dev import AS3_BUILD, PYTHON27_CANDIDATES, RES
 
 REPO = Path(__file__).resolve().parent.parent
 SRC = REPO / 'src' / 'unicum'
 ENTRY = REPO / 'dev' / 'mod_unicum.py.in'
 DIST = REPO / 'dist'
 
-MOD_ID = 'gg.unicum'
+MOD_ID = 'gg.unicum.wnxui'
 
 # Where the client's own paths.xml is published, to read the folder it looks in.
 #
@@ -68,29 +49,10 @@ PATHS_XML = 'https://raw.githubusercontent.com/unicum-gg/wot.src/EU/sources/path
 PATHS_MODS = re.compile(r'\./mods/([0-9][0-9.]*)')
 GAMEFACE = REPO / 'vendor' / 'openwg'
 NAME = 'unicum.gg'
-DESCRIPTION = ('Player ratings and language flags across the game, the unicum.gg tank menu in the '
-               'garage, and your Twitch chat in battle and in the garage.')
+DESCRIPTION = 'Battle WNX ratings, local session tracker and settings.'
 
 # Never shipped: a developer's own settings, compiled leftovers.
 EXCLUDED = {'local_settings.py'}
-
-# The two folders the rating and Twitch badges are written into used to be
-# shipped here, each holding a 1x1 marker, because the client indexes its
-# resource folders as it starts: an image written into a folder it knew draws
-# at once, one in a folder created later draws only from the next start on.
-#
-# They are not shipped any more, and nothing was lost. `badges.py` creates
-# them itself on the first run (its `_write` makes the directory), so the only
-# thing the shipped folders ever bought was one client start -- and that start
-# already happens, because openwg_gameface restarts the client once on a fresh
-# install when it puts the hangar button in the resource map. The flags are
-# unaffected either way: all 252 of them ride inside the .wotmod, under
-# res/gui/maps/icons, where ResMgr has them from the first second.
-#
-# What it buys is the instruction a player reads. Unzipping used to lay down
-# `mods/`, `mods/net.openwg/` AND two folders under `res_mods/`, which had to
-# be spelled out and made this mod look harder to install than every other one
-# on the hub. Now the archive is two .wotmod files and nothing else.
 
 VERSION = re.compile(r'^\d+\.\d+\.\d+(?:-dev\.\d+)?$')
 
@@ -134,10 +96,29 @@ def python27(given: str | None) -> list[str]:
     raise SystemExit('Python 2.7 not found; pass --python27')
 
 
+CORE_PACKAGES = {'api', 'battle', 'runtime', 'settings', 'settings_window', 'tracker', 'web'}
+CORE_MODULES = {'__init__', 'badge_png', 'badge_text', 'badges', 'config', 'extended_info',
+                'figures', 'first_run', 'layouts', 'minimap_names', 'modes', 'name_markers',
+                'profile', 'resources', 'roster', 'tab_screen', 'textures', 'views'}
+
+
+def ignore_noncore(folder, names):
+    path = Path(folder)
+    ignored = set(shutil.ignore_patterns('*.pyc', '*.pyo', '__pycache__', *EXCLUDED)(folder, names))
+    if path == SRC:
+        ignored.update(name for name in names if name not in CORE_PACKAGES
+                       and name != 'badge_glyphs.json'
+                       and not (name.endswith('.py') and Path(name).stem in CORE_MODULES))
+    elif path == SRC / 'web':
+        ignored.update(set(names) - {'battle'})
+    return ignored
+
+
 def stage_package(stage: Path, version: str) -> Path:
     """The package's sources in a scratch tree, with the release's version in it."""
     package = stage / 'unicum'
-    shutil.copytree(SRC, package, ignore=shutil.ignore_patterns('*.pyc', '*.pyo', '__pycache__', *EXCLUDED))
+    shutil.copytree(SRC, package, ignore=ignore_noncore)
+
     init = package / '__init__.py'
     text = init.read_text(encoding='utf-8')
     text, count = re.subn(r"^VERSION = '[^']*'$", f"VERSION = '{version}'", text, flags=re.M)
@@ -175,27 +156,17 @@ def members(stage: Path) -> list[tuple[Path, str]]:
             continue
         out.append((path, 'res/scripts/client/unicum/' + path.relative_to(package).as_posix()))
 
-    swfs = [swf for swf in AS3_BUILD.glob('unicum.*.swf') if not swf.name.endswith('.boot.swf')]
+    swfs = [swf for swf in AS3_BUILD.glob('unicum.*.swf')
+            if not swf.name.endswith('.boot.swf') and swf.name != 'unicum.settings.swf']
     swfs += list(AS3_BUILD.glob('battleVehicleMarkersApp.swf'))
     if not swfs:
         raise SystemExit('no SWFs in build/as3: run tools/build_as3.py first')
     out += [(swf, f'res/gui/flash/{swf.name}') for swf in sorted(swfs)]
 
-    flags = sorted(FLAGS_BUILD.glob('*.png'))
-    if not flags:
-        raise SystemExit('no flags in build/flags: run npm run build in tools/flags first')
-    out += [(flag, f'res/gui/maps/icons/unicum/flags/{flag.name}') for flag in flags]
-
-    icons = {'unicum.png': 'icon.png', 'twitch.png': 'twitch.png'}
-    for name, inside in icons.items():
-        if not (ICON_BUILD / name).is_file():
-            raise SystemExit(f'no build/icon/{name}: run npm run icon in tools/badges first')
-        out.append((ICON_BUILD / name, f'res/gui/maps/icons/unicum/{inside}'))
-    out += [(icon, f'res/gui/maps/icons/unicum/tankButton/{icon.name}')
-            for icon in sorted((ICON_BUILD / 'tankButton').glob('*.png'))]
-
-    out += [(path, 'res/' + path.relative_to(RES).as_posix()) for path in sorted(RES.rglob('*')) if path.is_file()]
-    for name in ('LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md'):
+    for name in ('gui/gen_resources/unicum_wnx_tab.json', 'mods/configs/res_map/unicum_wnx_tab.json',
+                 'gui/gameface/mods/unicum/WnxTab/WnxTab.html', 'gui/gameface/mods/unicum/WnxTab/WnxTab.js'):
+        out.append((RES / name, 'res/' + name))
+    for name in ('LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md', 'PRIVACY.md'):
         out.append((REPO / name, 'res/licenses/unicum/' + name))
     out += [(path, 'res/licenses/unicum/' + path.relative_to(REPO).as_posix())
             for path in sorted((REPO / 'licenses').rglob('*')) if path.is_file()]
@@ -257,7 +228,7 @@ def bundle(package: Path, version: str, client: str) -> None:
         archive.write(package, f'{folder}/{package.name}')
         archive.write(gameface[0], f'{folder}/net.openwg/{gameface[0].name}')
         archive.write(GAMEFACE / 'LICENSE-gameface', f'{folder}/net.openwg/LICENSE-gameface')
-        for name in ('LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md'):
+        for name in ('LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md', 'PRIVACY.md'):
             archive.write(REPO / name, 'licenses/unicum/' + name)
         for path in sorted((REPO / 'licenses').rglob('*')):
             if path.is_file():

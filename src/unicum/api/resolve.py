@@ -314,7 +314,7 @@ class Lookup(object):
         meantime loses is a cold first paint, not data -- every entry is
         refetchable, and the next session asks for whatever is missing.
         """
-        if self._save_scheduled or not self._dirty:
+        if not self._store or self._save_scheduled or not self._dirty:
             return
         self._save_scheduled = True
 

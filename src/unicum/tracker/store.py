@@ -5,44 +5,27 @@ import logging
 import os
 import time
 
+from unicum.runtime.files import recover, replace
 from unicum.tracker.formula import finite
+from unicum.tracker.records import (COMPLETE_SCHEMA, PARTIAL_SCHEMA, RATING_FIELDS,
+                                    complete, identifier, valid_start)
 
 _logger = logging.getLogger('unicum.tracker.store')
 ROOT = os.path.join('mods', 'configs', 'unicum', 'wnx_tracker')
-LIMIT = 200
+LIMIT = 60
 
 
-def replace(source, target):
-    """Use built-in file operations available in the shipped WoT Python.
-
-    Windows Python 2 cannot rename over a file. Keep the last committed copy
-    recoverable if the process dies between the two renames.
-    """
-    if os.name != 'nt' or not os.path.exists(target):
-        os.rename(source, target)
-        return
-    previous = target + '.previous'
-    if os.path.exists(previous):
-        os.unlink(previous)
-    os.rename(target, previous)
-    try:
-        os.rename(source, target)
-    except OSError:
-        os.rename(previous, target)
-        raise
-
-
-def recover(path):
-    previous = path + '.previous'
-    if not os.path.exists(path) and os.path.exists(previous):
-        os.rename(previous, path)
+def _existing_index(rows, row):
+    arena = row['arenaUniqueId']
+    return next((i for i, current in enumerate(rows) if current['arenaUniqueId'] == arena), None)
 
 
 class History(object):
-    def __init__(self, region, account_id, root=ROOT):
+    def __init__(self, region, account_id, root=ROOT, logger=_logger):
         if region not in ('eu', 'na', 'asia') or not str(account_id).isdigit():
             raise ValueError('invalid tracker identity')
         self.region, self.account = region, str(account_id)
+        self._logger = logger
         self.path = os.path.join(root, region, self.account, 'history.jsonl')
         self.rows, self.epoch, self.deleted = [], 0, set()
         self.error, self.readonly, self._events = None, False, 0
@@ -50,23 +33,34 @@ class History(object):
         self._load()
 
     def _valid(self, row):
-        return (isinstance(row, dict) and row.get('schemaVersion') == 1
-                and row.get('region') == self.region and row.get('accountId') == self.account
-                and isinstance(row.get('arenaUniqueId'), basestring)
-                and row['arenaUniqueId'].isdigit() and int(row['arenaUniqueId']) > 0
-                and all(finite(row.get(key)) and row[key] >= 0 for key in
-                        ('startedAt', 'tankId', 'battleType', 'damageDealt',
-                         'damageAssistedRadio', 'damageAssistedTrack', 'frags', 'spotted'))
-                and row['startedAt'] > 0 and row['tankId'] > 0)
+        if not isinstance(row, dict) or (row.get('region'), row.get('accountId')) != (self.region, self.account):
+            return False
+        arena = row.get('arenaUniqueId')
+        if not isinstance(arena, basestring) or identifier(arena) != arena:
+            return False
+        if not valid_start(row.get('startedAt')) or not finite(row.get('battleType')) or row['battleType'] < 0:
+            return False
+        schema = row.get('schemaVersion')
+        if schema != (COMPLETE_SCHEMA if complete(row) else PARTIAL_SCHEMA):
+            return False
+        tank = row.get('tankId')
+        return ((tank is None or (finite(tank) and int(tank) == tank and tank > 0))
+                and all(key in row and (row[key] is None or (finite(row[key]) and row[key] >= 0))
+                        for key in RATING_FIELDS))
 
     def _put(self, row):
         if (not self._valid(row) or row['startedAt'] <= self.epoch
-                or row['arenaUniqueId'] in self.deleted
-                or any(r['arenaUniqueId'] == row['arenaUniqueId'] for r in self.rows)):
+                or row['arenaUniqueId'] in self.deleted):
             return False
-        if len(self.rows) == LIMIT and row['startedAt'] <= self.rows[0]['startedAt']:
-            return False
-        self.rows.append(copy.deepcopy(row))
+        known = _existing_index(self.rows, row)
+        if known is None:
+            if len(self.rows) == LIMIT and row['startedAt'] <= self.rows[0]['startedAt']:
+                return False
+            self.rows.append(copy.deepcopy(row))
+        else:
+            if complete(self.rows[known]) or not complete(row):
+                return False
+            self.rows[known] = copy.deepcopy(row)
         self.rows.sort(key=lambda r: (r['startedAt'], int(r['arenaUniqueId'])))
         self.rows = self.rows[-LIMIT:]
         return True
@@ -76,7 +70,7 @@ class History(object):
             recover(self.path)
         except OSError:
             self.error, self.readonly = 'storage_error', True
-            _logger.exception('could not recover committed tracker journal')
+            self._logger.exception('could not recover committed tracker journal')
             return
         if not os.path.exists(self.path):
             return
@@ -86,7 +80,8 @@ class History(object):
                 for line in handle:
                     try:
                         item = json.loads(line)
-                        if not isinstance(item, dict) or item.get('schemaVersion') != 1:
+                        if (not isinstance(item, dict)
+                                or item.get('schemaVersion') not in (COMPLETE_SCHEMA, PARTIAL_SCHEMA)):
                             self.readonly = True
                             raise ValueError('unsupported journal schema')
                         if item.get('kind') in ('snapshot', 'reset'):
@@ -109,7 +104,7 @@ class History(object):
                         self._events += 1
                     except (ValueError, TypeError, KeyError):
                         broken = True
-                        _logger.warning('invalid tracker journal record')
+                        self._logger.warning('invalid tracker journal record')
             if broken:
                 self.error = 'history_recovered'
                 if not self.readonly:
@@ -120,7 +115,7 @@ class History(object):
         except (IOError, OSError):
             self.error = 'storage_error'
             self.readonly = True
-            _logger.exception('could not load local tracker history')
+            self._logger.exception('could not load local tracker history')
 
     def _append(self, item):
         if self.readonly:
@@ -135,7 +130,10 @@ class History(object):
         self._events += 1
 
     def _snapshot(self):
-        return {'schemaVersion': 1, 'kind': 'snapshot', 'resetEpoch': self.epoch,
+        # An earlier candidate treats a newer envelope as read-only and
+        # leaves the partial results intact for the current reader.
+        version = PARTIAL_SCHEMA if any(not complete(row) for row in self.rows) else COMPLETE_SCHEMA
+        return {'schemaVersion': version, 'kind': 'snapshot', 'resetEpoch': self.epoch,
                 'deleted': sorted(self.deleted), 'rows': self.rows}
 
     def _compact(self, snapshot=None):
@@ -159,24 +157,27 @@ class History(object):
         try:
             if self.pending:
                 raise IOError('tracker history is awaiting journal repair')
-            self._append({'schemaVersion': 1, 'kind': 'battle', 'row': row})
+            self._append({'schemaVersion': row['schemaVersion'], 'kind': 'battle', 'row': row})
         except (IOError, OSError):
             self.rows = before
             self.error = 'storage_error'
-            if not any(r['arenaUniqueId'] == row['arenaUniqueId'] for r in self.pending):
+            queued = _existing_index(self.pending, row)
+            if queued is None:
                 self.pending = (self.pending + [copy.deepcopy(row)])[-LIMIT:]
+            elif not complete(self.pending[queued]) and complete(row):
+                self.pending[queued] = copy.deepcopy(row)
             if not self._retry_at:
                 self._retry_at = time.time() + 5
             raise
-        if self._events > 400:
+        if self._events > LIMIT or (len(before) == LIMIT and before[0] != self.rows[0]):
             try:
                 self._compact()
             except (IOError, OSError):
-                _logger.exception('tracker compaction deferred; journal is intact')
+                self._logger.exception('tracker compaction deferred; journal is intact')
         return True
 
-    def retry(self):
-        if not self.pending or self.readonly or time.time() < self._retry_at:
+    def retry(self, force=False):
+        if not self.pending or self.readonly or (not force and time.time() < self._retry_at):
             return False
         self._retry_at = time.time() + 5
         before = self.rows[:]
@@ -196,7 +197,7 @@ class History(object):
         epoch = time.time() if now is None else now
         deleted = set(self.deleted) | set(row['arenaUniqueId'] for row in self.rows + self.pending)
         try:
-            self._compact({'schemaVersion': 1, 'kind': 'snapshot', 'rows': [],
+            self._compact({'schemaVersion': COMPLETE_SCHEMA, 'kind': 'snapshot', 'rows': [],
                            'resetEpoch': epoch, 'deleted': sorted(deleted)})
         except (IOError, OSError):
             self.error = 'storage_error'
@@ -208,4 +209,4 @@ class History(object):
             try:
                 os.unlink(previous)
             except OSError:
-                _logger.warning('tracker reset committed but previous journal could not be removed')
+                self._logger.warning('tracker reset committed but previous journal could not be removed')

@@ -82,31 +82,17 @@ def read_peek(text):
     return peek
 
 
-def apply_window(raw, settings, link):
-    """A page's values into settings.json, and the site-owned boxes into the link.
+def apply_window(raw, settings, link, done=None):
+    """Commit supported local WNX settings and acknowledge the save."""
+    from unicum.profile import window_values
+    raw = window_values(raw)
+    if not settings.update(from_window(raw)):
+        if done is not None:
+            done('local', [])
+        return
+    if done is not None:
+        done('', [])
 
-    The card's box and the two hiding boxes are not settings: one lives in
-    account.json and the others are a row on the site, so none can go through
-    `settings.update`. They are read off the same page all the same, because
-    to the player they are boxes in the same list.
-    """
-    wanted = raw.get(CARD_VAR)
-    if isinstance(wanted, bool) and link is not None and wanted != (not link.card_hidden):
-        if wanted:
-            link.show_card()
-        else:
-            link.hide_card()
-    hidden = raw.get(HIDE_VAR)
-    # Absent from the page for anyone who is not a supporter, which is the
-    # same thing as leaving it alone.
-    if isinstance(hidden, bool) and link is not None and hidden != link.loadouts_hidden:
-        link.hide_loadouts(hidden)
-    battles_hidden = raw.get(HIDE_BATTLES_VAR)
-    # Absent from the page for a game not linked to an account.
-    if (isinstance(battles_hidden, bool) and link is not None
-            and battles_hidden != link.battles_hidden):
-        link.hide_battles(battles_hidden)
-    settings.update(from_window(raw))
 
 def to_window(values, card_shown=True, loadouts_hidden=False, battles_hidden=False):
     """What the window stores for these settings: flat, choices by index."""
@@ -143,6 +129,7 @@ def to_window(values, card_shown=True, loadouts_hidden=False, battles_hidden=Fal
         window[_figures_key(surface)] = FIGURE_CHOICES.index(values[surface]['figures'])
     for surface in AVERAGED:
         window[surface + 'Average'] = values[surface]['average']
+    window['battleRating'] = values['battle']['rating']
     window.update(wnx.to_window(values))
     from unicum.tracker import options as tracker
     tracked = tracker.validate(values.get('wnxTracker'))
@@ -158,6 +145,8 @@ def to_window(values, card_shown=True, loadouts_hidden=False, battles_hidden=Fal
 def from_window(raw):
     """settings.json changes from what the window sends back."""
     changes = wnx.from_window(raw)
+    if isinstance(raw.get('battleRating'), bool):
+        changes.setdefault('battle', {})['rating'] = raw['battleRating']
     from unicum.tracker import options as tracker
     for key, choices in (('mode', tracker.MODES), ('count', tracker.COUNTS), ('opacity', tracker.OPACITIES)):
         index = _index(raw.get('tracker_' + key), choices)

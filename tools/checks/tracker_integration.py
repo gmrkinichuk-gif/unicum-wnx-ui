@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
 """Full settings parity, offline expected cache and account-bound consumer checks."""
 import copy
 import json
+import logging
 import os
 import sys
+import threading
+import time
 import types
 
 from checks.common import check
@@ -14,9 +18,6 @@ def run(workdir):
     from unicum.settings_window import codec, page
     from unicum.tracker.page import build, CATEGORIES
     from unicum.tracker.expected import Expected, parse, ORIGIN
-    from unicum.tracker import service
-    from unicum.game_link import proof
-    from checks.battles import RESULTS
     import helpers
 
     session = Session(0)
@@ -95,8 +96,92 @@ def run(workdir):
         else:
             helpers.isPlayerAccount = original_account
 
+    check_history_messages(session, settings)
+    session.close()
+    check_history_delivery()
+
+
+def check_history_messages(session, settings):
+    from unicum.tracker.controller import Controller
+    from unicum.tracker.writer import HistoryView
+    from unicum.tracker.extract import extract
+    from checks.battles import RESULTS
+
+    account = '531280131'
+    constants = type('Bonus', (), {'REGULAR': 1})
+    row = extract(RESULTS, 'eu', account, constants)
+    rows = [dict(row, arenaUniqueId=str(i + 1)) for i in range(10)]
+    tracker = type('Tracker', (), {'account': account, 'revision': 0})()
+    lookup = type('Lookup', (), {'get': lambda *args: None})()
+    scales = type('Scales', (), {'color': lambda *args: None})()
+    tab = type('Tab', (), {'_page': lambda self: ''})()
+    controller = Controller(session, settings, tracker, lookup, scales)
+    controller._tank = lambda tank_id: ('Fixture tank', 10)
+    controller.expected.table = {6209: {'damage': 1200, 'frags': 0.8, 'spots': 1.1, 'assist': 500}}
+    settings.update({'wnxTracker': {'count': 10}})
+    for language, play_more, incomplete, unknown, missing in (
+            ('en', 'Play 1 more random battles', 'Incomplete battle results', 'Unknown tank',
+             'Missing WNX expectations for some tanks'),
+            ('uk', u'Зіграйте ще 1 випадкових боїв', u'Неповні результати боїв', u'Невідомий танк',
+             u'Для деяких танків бракує очікуваних значень WNX')):
+        settings.update({'settingsLanguage': language})
+        tracker.history = HistoryView(rows[:-1], None, False, False)
+        tracker.revision += 1
+        state = controller._model()
+        check('%s genuine shortfall gets the battle-count message' % language,
+              state['progress'] == 9 and state['message'] == play_more)
+
+        tracker.history = HistoryView(rows[:-1] + [dict(rows[-1], tankId=None, schemaVersion=2)],
+                                      None, False, False)
+        tracker.revision += 1
+        state = controller._model()
+        check('%s widget and graph tooltips explain the unavailable rating' % language,
+              state['progress'] == 10 and state['wnx'] is None and state['message'] == incomplete
+              and state['bars'][-1]['message'] == state['points'][-1]['message'] == incomplete
+              and state['bars'][-1]['tankName'] == unknown and state['bars'][0]['tankName'] == 'Fixture tank')
+        tracker.history = HistoryView(rows[:-1] + [dict(rows[-1], tankId=123)], None, False, False)
+        tracker.revision += 1
+        state = controller._model()
+        check('%s missing tank expectations have their own widget and tooltip text' % language,
+              state['progress'] == 10 and state['message'] == state['bars'][-1]['message'] == missing)
+
+
+def check_history_delivery():
+    from unicum.game_link import proof
+    from unicum.runtime.session import Session
+    from unicum.tracker import service
+    from unicum.tracker.store import History
+    from checks.battles import RESULTS
+
+    class LogThreads(logging.Handler):
+        def __init__(self):
+            logging.Handler.__init__(self)
+            self.threads = []
+
+        def emit(self, record):
+            self.threads.append(threading.current_thread())
+
+    def wait_for(tracker, predicate):
+        deadline = time.time() + 5
+        while time.time() < deadline:
+            tracker.identify()
+            if tracker.history is not None and predicate(tracker.history):
+                return tracker.history
+            time.sleep(0.01)
+        return None
+
     original_identity, original_replay = proof.current_account_id, service.playing_replay
     original_constants = sys.modules.get('constants')
+    original_append = History._append
+    first, second = '531280131', '595280968'
+    result = dict(RESULTS, personal={'avatar': {'accountDBID': int(first)}})
+    partial = copy.deepcopy(result)
+    partial['vehicles']['13089208'][0].pop('damageAssistedTrack')
+    started, release = threading.Event(), threading.Event()
+    main_thread = threading.current_thread()
+    log, captured = logging.getLogger('unicum.tracker.store'), LogThreads()
+    log.addHandler(captured)
+    session = Session(0)
     try:
         constants = types.ModuleType('constants')
         constants.ARENA_BONUS_TYPE = type('Bonus', (), {'REGULAR': 1})
@@ -105,35 +190,88 @@ def run(workdir):
         proof.current_account_id = lambda: identity[0]
         service.playing_replay = lambda: False
         tracker = service.Tracker(session)
-        tracker.record(RESULTS)
-        check('unknown identity retains delayed raw result in memory', len(tracker._pending) == 1)
-        identity[0] = '531280131'
-        tracker.identify()
-        check('garage identity resolves delayed result once', len(tracker.history.rows) == 1 and not tracker._pending)
-        tracker.record(RESULTS)
-        check('consumer deduplicates repeated confirmed results', len(tracker.history.rows) == 1)
+        tracker.record(dict(RESULTS, arenaUniqueID=987654320))
+        tracker.record(partial)
+        tracker.record(partial)
         service.playing_replay = lambda: True
-        tracker.record(dict(RESULTS, arenaUniqueID=987654321))
-        check('replay playback never enters history', len(tracker.history.rows) == 1)
+        tracker.record(dict(result, arenaUniqueID=987654321))
+        session.close()
+
+        session = Session(1)
+        tracker = service.Tracker(session)
         service.playing_replay = lambda: False
-        identity[0] = '595280968'
-        tracker.identify()
-        check('account switching isolates local history', not tracker.history.rows)
-        tracker.record(RESULTS)
-        check('other account extracts only its own tank and damage', tracker.history.rows[0]['tankId'] == 8545
-              and tracker.history.rows[0]['damageDealt'] == 872)
+        identity[0] = second
+        state = wait_for(tracker, lambda view: True)
+        check('anonymous receipt survives close and does not follow the next login',
+              state is not None and not state.rows)
+        tracker.record(RESULTS)  # Older results can still use the client account.
+        state = wait_for(tracker, lambda view: len(view.rows) == 1)
+        check('signed-in account extracts only its own tank and damage', state is not None
+              and state.rows[0]['tankId'] == 8545 and state.rows[0]['damageDealt'] == 872)
+        rejected = False
         try:
-            tracker.reset(('eu', '531280131'))
+            tracker.reset(('eu', first))
         except ValueError:
-            pass
-        check('reset confirmation cannot cross account switch', len(tracker.history.rows) == 1)
+            rejected = True
+        check('reset confirmation cannot cross account switch', rejected)
+
+        identity[0] = first
+        state = wait_for(tracker, lambda view: True)
+        check('restart retains one verified partial result and excludes replay and unowned results',
+              state is not None and [row['arenaUniqueId'] for row in state.rows] ==
+              [str(RESULTS['arenaUniqueID'])] and state.rows[0]['damageAssistedTrack'] is None)
+        tracker.record(result)
+        state = wait_for(tracker, lambda view: view.rows[0]['damageAssistedTrack'] is not None)
+        check('normal consumer upgrades a partial result in place on complete redelivery',
+              state is not None and len(state.rows) == 1 and state.rows[0]['damageAssistedTrack'] == 59)
+
+        def slow_append(history, item):
+            started.set()
+            if not release.wait(5):
+                raise IOError('test did not release worker')
+            return original_append(history, item)
+
+        History._append = slow_append
+        older = dict(result, arenaUniqueID=987654322)
+        later = dict(result, arenaUniqueID=987654323,
+                     common=dict(result['common'], arenaCreateTime=int(time.time()) + 10))
+        tracker.record(older)
+        check('write is pending while the game can keep reading the current view',
+              started.wait(2) and tracker.identify() == first and tracker.history is state)
+        tracker.reset(('eu', first))
+        tracker.record(older)
+        tracker.record(later)
+        check('reset and a result can enqueue without waiting on slow disk',
+              not release.is_set() and tracker.history is state)
+        release.set()
+        state = wait_for(tracker, lambda view: [row['arenaUniqueId'] for row in view.rows] == ['987654323'])
+        check('FIFO reset drops old callbacks and retains only the post-reset battle', state is not None)
+
+        failure = dict(later, arenaUniqueID=987654324)
+        def failed_append(history, item):
+            raise IOError('deliberate write failure')
+        History._append = failed_append
+        tracker.record(failure)
+        state = wait_for(tracker, lambda view: view.pending)
+        check('worker exposes write error without counting the uncommitted result',
+              state is not None and state.error == 'storage_error' and len(state.rows) == 1)
+        tracker.identify()
+        check('storage errors reach client log handlers on the game thread', captured.threads == [main_thread])
+        History._append = original_append
+        session.close()
+        check('normal teardown retries a failed write and preserves both accounts on disk',
+              [row['arenaUniqueId'] for row in History('eu', first).rows] == ['987654323', '987654324']
+              and len(History('eu', second).rows) == 1)
     finally:
+        release.set()
+        History._append = original_append
+        session.close()
+        log.removeHandler(captured)
         proof.current_account_id, service.playing_replay = original_identity, original_replay
         if original_constants is None:
             sys.modules.pop('constants', None)
         else:
             sys.modules['constants'] = original_constants
-    session.close()
 
 
 def check_escape():

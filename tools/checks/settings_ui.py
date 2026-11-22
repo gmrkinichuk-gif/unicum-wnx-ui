@@ -9,6 +9,8 @@ from checks.common import check
 
 def run(workdir):
     check_menu_fallback()
+    from checks.menu_entry import run as check_menu_entry
+    check_menu_entry(workdir)
     from unicum.runtime.session import Session
     from unicum.settings import Settings
     from unicum.settings import wnx

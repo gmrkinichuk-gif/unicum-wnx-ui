@@ -10,6 +10,8 @@ import json
 import logging
 import os
 
+from unicum.runtime.files import recover, write_json
+from unicum import profile
 from unicum.settings.defaults import CAREER_ONLY, DEFAULTS, STORE, WINDOWS
 from unicum.settings.validating import (_merge, panel_size,
                                         twitch_channel, validate)
@@ -27,12 +29,12 @@ class Settings(object):
         self._values, self._stamp = self._read()
         # Written when missing, or to normalise what was read; never over a
         # file that did not parse, which holds the player's edits.
-        if self._stamp is None or (self._raw is not None and self._values != self._raw):
-            self._write()
+        if self._stamp is None or (self._raw is not None and profile.settings(self._values) != self._raw):
+            self._write(self._values)
 
     def install(self):
         self._session.repeat(_CHECK_SECONDS, self._check)
-        _logger.info('loaded %s', self._values)
+        _logger.info('loaded WNX settings')
 
     def __getitem__(self, key):
         return self._values[key]
@@ -59,7 +61,7 @@ class Settings(object):
         The defaults say why there is no box, and what a player who wants
         privacy gets instead (`hideBattles`).
         """
-        return True
+        return False
 
     def sends_replays(self):
         """Whether this client also sends the replay file of those battles.
@@ -243,26 +245,35 @@ class Settings(object):
         self._listeners.append(listener)
 
     def update(self, changes):
-        """Apply and save changes; listeners run only when something changed.
+        """Commit changes before notifying readers; return whether they were saved.
 
         Changes are merged in at every level: {'battle': {'rating': False}}
         leaves the battle's flags as they were, and {'modes': {'ranked':
         {'enemies': False}}} leaves the ranked allies.
         """
+        self._check()
         merged = self.values()
         _merge(merged, changes)
-        values = validate(merged)
-        if values == self._values:
-            return
-        self._values = values
-        self._write()
-        self._notify()
+        values = profile.runtime(validate(profile.settings(merged)))
+        changed = values != self._values
+        if not changed and self._raw is None and self._stamp is not None:
+            return False
+        if (changed or self._raw is None) and not self._write(values):
+            return False
+        if changed:
+            self._values = values
+            self._notify()
+        return True
 
     def _check(self):
         """Pick up a hand edit of the file."""
         stamp = _mtime(self._store)
-        if stamp is None or stamp == self._stamp:
+        if stamp == self._stamp:
             return
+        self.reload()
+
+    def reload(self):
+        """Read external changes now, including when opening a settings window."""
         values, self._stamp = self._read()
         if self._raw is None:
             # A typo mid-edit: keep what is on screen until the file parses.
@@ -282,29 +293,32 @@ class Settings(object):
     def _read(self):
         """The validated settings and the file's stamp; keeps what was on disk in _raw."""
         self._raw = None
+        try:
+            recover(self._store)
+        except OSError:
+            _logger.exception('could not recover %s', self._store)
+            return profile.runtime(validate({})), _mtime(self._store)
         stamp = _mtime(self._store)
         if stamp is None:
-            return validate({}), None
+            return profile.runtime(validate({})), None
         try:
             with open(self._store, 'rb') as handle:
                 self._raw = json.load(handle)
         except (IOError, ValueError):
             _logger.exception('could not read %s, using the defaults and leaving the file as it is',
                               self._store)
-            return validate({}), stamp
-        return validate(self._raw), stamp
+            return profile.runtime(validate({})), stamp
+        return profile.runtime(validate(profile.settings(self._raw))), stamp
 
-    def _write(self):
+    def _write(self, values):
         try:
-            directory = os.path.dirname(self._store)
-            if directory and not os.path.isdir(directory):
-                os.makedirs(directory)
-            with open(self._store, 'wb') as handle:
-                json.dump(self._values, handle, indent=2, sort_keys=True)
+            write_json(self._store, profile.settings(values))
             self._stamp = _mtime(self._store)
-            self._raw = self.values()
-        except (IOError, OSError):
+            self._raw = profile.settings(values)
+            return True
+        except (IOError, OSError, ValueError, TypeError):
             _logger.exception('could not write %s', self._store)
+            return False
 
 def _mtime(path):
     try:

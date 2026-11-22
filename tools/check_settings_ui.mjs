@@ -74,21 +74,11 @@ for(const [choice,expected] of [[1,'2180'],[2,'56%'],[3,'18.4k'],[4,marker.stats
   assert.equal(stats({state:4},marker),expected,'selected Alt statistic reaches the native text slot');
 }
 
-const [commitArgs,commitBody]=method('settings/SettingsTabView.as','onCommit');
-const commit=new Function(`return function(${commitArgs}){${commitBody}}`)();
-const output=[];
-const view={memory:{pending:{enabled:'c\t0',wnx_panel_duration:'d\t4'}},
-  _shell:{send:line=>output.push(line),hold(){}},unpeek:()=>output.push('peek\t\t\t')};
-commit.call(view,{});
-assert.deepEqual(output,['enabled\tc\t0','wnx_panel_duration\td\t4','peek\t\t\t']);
-assert.deepEqual(view.memory.pending,{});
-const [clearArgs,clearBody]=method('settings/SettingsTabView.as','clear');
-const clear=new Function('Event','MouseEvent',`return function(${clearArgs}){with(this){${clearBody}}}`)({CHANGE:'change'},{MOUSE_WHEEL:'wheel'});
-const detached=[];
-const handler=()=>{};
-const closing={_inputs:[{field:{removeEventListener:(type,fn)=>detached.push([type,fn])},handler}],
-  _bar:null,_scrollBar:null,_viewport:null,_pane:null,_content:null,numChildren:0,onWheel:()=>{},removeEventListener(){}};
-clear.call(closing);
-assert.deepEqual(detached,[['change',handler]],'closing/rebuilding removes text input listeners explicitly');
-assert.deepEqual(closing._inputs,[]);
-console.log('PASS actual AS3 WNX controls: background/stripe independence, opacity/cache, loading columns, Alt choices/duration/disable and Apply transport');
+
+for (const file of ['LobbyView.as', 'TeamNamesHtml.as']) {
+  const host = fs.readFileSync(new URL('../as3/src/unicum/' + file, import.meta.url), 'utf8');
+  assert.doesNotMatch(host, /SettingsTabs?|settingsTab/, 'native settings registration is absent');
+}
+const lobby = fs.readFileSync(new URL('../as3/src/unicum/LobbyView.as', import.meta.url), 'utf8');
+assert.match(lobby, /new TrackerRoot\(this\)/, 'hangar Tracker remains available');
+console.log('PASS WNX controls, removed native settings registration and retained Tracker host');

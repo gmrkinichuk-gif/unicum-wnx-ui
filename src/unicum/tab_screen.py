@@ -49,7 +49,8 @@ from gui.impl.pub.view_component import ViewComponent
 from unicum import extended_info, figures, resources
 from unicum.api.entry import PLAYERS
 from unicum.layouts import layout_id
-from unicum.tank_button import FEATURE, LAYOUT, compose
+FEATURE = 'UnicumWnxTab'
+LAYOUT = 'R.mods.unicum.WnxTab.views.UnicumWnxTab'
 
 _logger = logging.getLogger('unicum.tab_screen')
 
@@ -59,7 +60,7 @@ _logger = logging.getLogger('unicum.tab_screen')
 SURFACE = 'battle'
 SCREEN = 'tab'
 
-_MODULE = 'coui://gui/gameface/mods/unicum/TankButton/TankButton.js'
+_MODULE = 'coui://gui/gameface/mods/unicum/WnxTab/WnxTab.js'
 _SCRIPT = 'web/battle/tab_screen.js'
 _STYLE = 'web/battle/tab_screen.css'
 _CHECK_SECONDS = 1.0
@@ -202,7 +203,7 @@ class TabScreen(object):
         stamps = tuple(resources.stamp(path) for path in (_SCRIPT, _STYLE))
         if stamps != self._stamps:
             self._stamps = stamps
-            self._script = compose([('tab screen', resources.read(_SCRIPT).decode('utf-8'))])
+            self._script = resources.read(_SCRIPT).decode('utf-8')
             self._style = resources.read(_STYLE).decode('utf-8')
             self._revision = zlib.crc32((self._script + self._style).encode('utf-8')) & 0x3fffffff
             for model in list(self._models().keys()):

@@ -180,7 +180,7 @@ class SwfView(object):
 
 
 LOBBY = SwfView('unicumLobby', 'unicum.lobby.swf', APP_NAME_SPACE.SF_LOBBY,
-                'profile titles keep a language code, no members sort nor detachment average')
+                'local tracker and its settings unavailable')
 BATTLE = SwfView('unicumBattle', 'unicum.battle.swf', APP_NAME_SPACE.SF_BATTLE,
                  'no ratings by the vehicle icons, team averages stay plain numbers')
 

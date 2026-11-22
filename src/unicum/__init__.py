@@ -10,20 +10,15 @@ is nothing more than stop() followed by a fresh start().
 """
 import logging
 
-from unicum import (auto_reload, battle, battle_results, battles, browser, config, context_menu, first_run,
-                    loadouts, lobby, measuring, minimap_names, mods_list, motion, replays, reporting,
-                    room_sort, settings_tab, tab_screen,
-                    settings_window,
-                    tank_button, twitch, twitch_panel, twitch_send, twitch_window, views)
+from unicum import battle, config, first_run, tab_screen, settings_window, views
 from unicum.badges import Badges
-from unicum.game_link import GameLink
 from unicum.api.resolve import Lookup
 from unicum.api.scales import RatingScales
 from unicum.runtime.session import Session
 from unicum.settings import Settings
 from unicum.textures import FlagCache
 
-VERSION = '0.1.0-dev'
+VERSION = '0.9.20'
 
 _logger = logging.getLogger('unicum')
 
@@ -37,9 +32,6 @@ def start(generation=0):
         stop()
     _session = Session(generation)
     _logger.info('start: version=%s generation=%s', VERSION, generation)
-    # Before anything else installs: a feature that fails on the way up is
-    # exactly what an author never hears about otherwise.
-    reporting.install(_session, VERSION)
     # Before any feature that draws: a folder made now is not in the client's
     # index, so nothing written into it can be drawn until the client starts
     # again. Asking for that restart is the whole point.
@@ -51,57 +43,26 @@ def start(generation=0):
         # learned that session.
         settings = Settings(_session)
         settings.install()
-        # Right after the settings and before anything that hooks: the meter
-        # measures whatever is installed after it, and the box that turns it
-        # on has to be readable from the first frame.
-        measuring.install(_session, settings)
-        link = GameLink(_session)
-        link.install()
-        window = settings_window.install(_session, settings, link)
-        tab = settings_tab.install(_session, settings, link)
-        menu = mods_list.install(_session)
-        lookup = Lookup(_session, config.REGION)
-        scales = RatingScales(_session)
+        window = settings_window.install(_session, settings)
+        lookup = Lookup(_session, config.REGION, store=False, api_base='https://unicum.gg')
+        scales = RatingScales(_session, api_base='https://unicum.gg')
         flags = FlagCache(_session)
         badges = Badges(scales)
-        # Both settings windows draw their preview with these: the same
-        # badges and the same flag files the battle itself draws with.
+        # The optional Mod Menu preview uses the same badges as battle.
         window.follow_badges(badges, flags)
-        tab.follow_badges(badges, flags)
         # One reader of the extended info key for every surface that can wait
-        # for it: the battle screens, the skirmish room and the stronghold.
+        # for it: the battle screens.
         from unicum.extended_info import ExtendedInfo
         alt = ExtendedInfo(_session)
         alt.install()
-        browser.install(_session, lookup, flags, scales, settings, alt)
         battle.install(_session, lookup, flags, badges, settings, alt)
-        battle_results.install(_session, lookup, flags, badges, scales, settings)
         tab_screen.install(_session, lookup, flags, badges, scales, settings, alt)
         views.install(_session)
-        lobby.install(_session, lookup, flags, badges, settings, alt)
-        room_sort.install(_session, settings)
-        tank_button.install(_session, settings)
-        context_menu.install(_session, settings)
-        loadouts.install(_session, settings, link)
-        # Before the reporter: it hands the samples over when a battle ends.
-        tracks = motion.install(_session)
-        # Also before it, and for the same reason: the reporter tells it which
-        # battles were written down, and it looks for their files at the
-        # garage. It must exist by then.
-        files = replays.install(_session, settings, link)
         from unicum.tracker.service import Tracker
+        from unicum.tracker import controller, results
         tracker = Tracker(_session)
-        battles.install(_session, settings, link, tracks, files, tracker)
-        auto_reload.install(_session, settings)
-        minimap_names.install(_session, settings, alt)
-        chat = twitch.install(_session, settings, link)
-        window.follow_twitch(chat)
-        tab.follow_twitch(chat)
-        sender = twitch_send.install(_session, link, chat)
-        twitch_panel.install(_session, settings, chat, link, sender)
-        twitch_window.install(_session, settings, chat, link)
-        from unicum.tracker import controller
-        controller.install(_session, settings, tracker, lookup, scales, tab, menu)
+        results.install(_session, tracker)
+        controller.install(_session, settings, tracker, lookup, scales)
     except Exception:
         # A feature that fails halfway leaves the ones before it installed.
         # Without this the session is orphaned: the loader sees start() fail
