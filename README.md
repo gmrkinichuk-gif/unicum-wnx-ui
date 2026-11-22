@@ -54,6 +54,14 @@ computer. See [Privacy and data use](PRIVACY.md) for the full inventory.
 The [WGMods assessment](docs/WGMODS_REVIEW.md) records which checks were
 completed and which require moderation or live client evidence.
 
+Read the [release license and user notice](RELEASE_LICENSE.md) **before installing**.
+The mod sends third-party account-ID requests while active; there is no separate
+in-game opt-in for those requests. See [Privacy and data use](PRIVACY.md) for
+the precise network activity and instructions for stopping it.
+
+For a future WGMods submission, see the [listing draft in English and Russian](docs/WGMODS_LISTING.md).
+The current GitHub release is not evidence of WGMods approval.
+
 ## Build
 
 Use Python 3, Java 17 and Python 2.7 with a matching installed EU client.
@@ -76,7 +84,10 @@ battle-history file, credentials or unredacted game logs.
 
 ## License and attribution
 
-The mod source is licensed under [GNU AGPL v3](LICENSE). The [NOTICE](NOTICE)
+The mod source and compiled binaries are licensed under [GNU AGPL v3](LICENSE).
+The [release license and user notice](RELEASE_LICENSE.md) summarizes the terms
+without adding restrictions or claiming that installation is consent.
+The [NOTICE](NOTICE)
 and [third-party notices](THIRD_PARTY_NOTICES.md) identify the upstream work
 and separate dependencies. Wargaming owns its trademarks and client material
 used by this project. Wargaming does not endorse this work.
