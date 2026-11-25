@@ -18,7 +18,7 @@ from unicum.runtime.session import Session
 from unicum.settings import Settings
 from unicum.textures import FlagCache
 
-VERSION = '0.9.20'
+VERSION = '0.9.21'
 
 _logger = logging.getLogger('unicum')
 

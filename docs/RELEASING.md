@@ -5,12 +5,16 @@ commit. There are no tag-triggered publishers, scheduled release PRs or calls
 to the upstream wgmods service. Removed upstream tools targeted its repository
 or mod-hub ID and must not be reused for this derivative without adaptation.
 
-1. Use the version at the top of the CHANGELOG (currently 0.9.20); bump it
+1. Use the version at the top of the CHANGELOG (currently 0.9.21); bump it
    only for a deliberately versioned change.
 2. Build from a matching installed EU client with README's commands, or run
    the manual `candidate` workflow with the current version. It reads the live
    client through the inherited client-files action. A candidate is an Actions
    artifact, never a Release. Record the client manifest and SHA-256 digests.
+   For v0.9.21, require `mods` to equal `2.4.2.0` in `client.json` and
+   check the build identifier against the target installed EU client. If the
+   CDN has advanced to another version, do not publish that candidate as
+   2.4.2.0; rebuild from matching installed client files.
 3. Run the packaging unit tests, compiled-package release_check and UI checks. Pass both
    `dist/gg.unicum.wnxui_<version>.wotmod` and
    `dist/unicum.gg_<version>_wot_<client version>.zip` to release_check so it
