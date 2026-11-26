@@ -65,7 +65,8 @@ def check_archives(package, bundle=None):
         check('the installer includes the required license notices',
               all(name in names for name in
                   (folder + 'net.openwg/LICENSE-gameface', 'licenses/unicum/LICENSE',
-                   'licenses/unicum/NOTICE', 'licenses/unicum/THIRD_PARTY_NOTICES.md')))
+                   'licenses/unicum/NOTICE', 'licenses/unicum/THIRD_PARTY_NOTICES.md',
+                   'licenses/unicum/RELEASE_LICENSE.md')))
         check('the installer includes the privacy disclosure', 'licenses/unicum/PRIVACY.md' in names)
 
 
@@ -140,6 +141,8 @@ def main():
         check('the entry point is where the client loads mods from',
               'res/scripts/client/gui/mods/mod_unicum.pyc' in names)
         check('the native settings tab library is absent', 'res/gui/flash/unicum.settings.swf' not in names)
+        check('the package includes release license information',
+              'res/licenses/unicum/RELEASE_LICENSE.md' in names)
         check('the package includes the privacy disclosure', 'res/licenses/unicum/PRIVACY.md' in names)
         check('the views and the patched markers app ship',
               all('res/gui/flash/%s' % swf in names for swf in

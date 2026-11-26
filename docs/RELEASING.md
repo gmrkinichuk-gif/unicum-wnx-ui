@@ -15,6 +15,9 @@ or mod-hub ID and must not be reused for this derivative without adaptation.
    `dist/gg.unicum.wnxui_<version>.wotmod` and
    `dist/unicum.gg_<version>_wot_<client version>.zip` to release_check so it
    verifies the new Package ID, filenames and installer content. Review skips.
+   Confirm the versioned `.wotmod` contains `res/licenses/unicum/RELEASE_LICENSE.md`
+   and the installer contains `licenses/unicum/RELEASE_LICENSE.md`, alongside the
+   full AGPL, upstream notices, third-party licenses and privacy disclosure.
 4. Test the candidate in WoT using [BETA_VALIDATION.md](BETA_VALIDATION.md):
    both teams, panel modes, loading, Tab, native Live Tags and tooltips, Alt
    changes, own/dead/hidden players, missing and late ratings, overhead markers
@@ -22,6 +25,8 @@ or mod-hub ID and must not be reused for this derivative without adaptation.
 5. Record the game validation evidence and maintainer's publication decision.
    Review the data-use notice and license obligations for the patched client
    movie and bundled components. See the [WGMods assessment](WGMODS_REVIEW.md).
+   Check the [WGMods listing draft](WGMODS_LISTING.md) and do not imply this
+   written disclosure substitutes for runtime opt-in or game-asset permission.
 6. Only then create a tag and GitHub Release manually, attach the verified ZIP,
    `.wotmod`, manifest and checksums, and provide matching Corresponding Source
    to every recipient. Do not replace verified assets with mirror-built output.
