@@ -1,7 +1,7 @@
 # Unicum WNX UI
 
 WNX battle overlays and a local hangar session tracker for **World of Tanks EU
-2.4.1.1**. This is an independent derivative of the
+2.4.1.1** (published v0.9.20). The v0.9.21 source targets **EU 2.4.2.0** as a compatibility candidate; build and in-game validation are pending. This is an independent derivative of the
 [Unicum.gg client mod](https://github.com/unicum-gg/unicum.gg-mod).
 
 ## What it adds
@@ -69,9 +69,9 @@ The build uses that client's Scaleform libraries and its markers movie.
 
 ```powershell
 python tools/build_as3.py --game "F:/Games/World_of_Tanks_EU"
-python tools/build_release.py --version 0.9.20 --python27 "C:/Python27/python.exe" --game "F:/Games/World_of_Tanks_EU"
+python tools/build_release.py --version 0.9.21 --python27 "C:/Python27/python.exe" --game "F:/Games/World_of_Tanks_EU"
 python -B -m unittest discover -s tools -p test_build_release.py
-& "C:/Python27/python.exe" -B tools/release_check.py dist/gg.unicum.wnxui_0.9.20.wotmod dist/unicum.gg_0.9.20_wot_2.4.1.1.zip
+& "C:/Python27/python.exe" -B tools/release_check.py dist/gg.unicum.wnxui_0.9.21.wotmod dist/unicum.gg_0.9.21_wot_2.4.2.0.zip
 node tools/check_roster_grid.mjs
 node tools/check_battle_ui.mjs
 node tools/check_settings_ui.mjs

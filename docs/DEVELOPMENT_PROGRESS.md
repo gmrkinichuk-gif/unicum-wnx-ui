@@ -695,3 +695,12 @@ was performed.
   suites, including 1,167 Tracker assertions. Current binary artifacts are
   under `build/final-0.9.20-audit/dist/`. Live acceptance checks for the
   removed tab and native marker visibility remain open.
+
+
+## WoT EU 2.4.2.0 compatibility candidate (2026-11-25)
+
+- Target v0.9.21; the published v0.9.20 remains the 2.4.1.1 release.
+- Bump the runtime version and changelog, update build examples, and document the required target manifest check.
+- The existing manual candidate workflow obtains live client inputs and rebuilds the Scaleform markers app; the mirror CI build is not a distributable release.
+- No WNX formula, UI, settings, package ID, network behavior or dependency versions changed.
+- Pending: run the candidate workflow on the compatibility branch, verify client.json and checksums, review test results, and complete live validation using BETA_VALIDATION.md. No new binary release has been published.

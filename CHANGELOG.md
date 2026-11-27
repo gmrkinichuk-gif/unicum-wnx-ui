@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.21
+
+- Prepare a compatibility candidate for World of Tanks EU 2.4.2.0.
+- Rebuild the Scaleform components against the live client's libraries and markers app; verify the generated client manifest before publishing.
+- Preserve the existing WNX calculation, Tracker, settings, package identity and data-use behavior.
+- Candidate build and in-game validation are required before publication.
+
 ## 0.9.20
 
 - Match the Tracker settings window to the rating-tinted glass card.
